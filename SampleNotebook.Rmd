@@ -1,0 +1,46 @@
+---
+title: "Assignment 1"
+author: "Your Name"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+Plain text, write whatever you want.
+
+### Question 1
+
+```{r eval=T, echo=T, error=T, warning=F, message=F}
+min_height <- 1
+max.height <- 1
+_age <- 1
+.mass <- 1
+MaxLength <- 1
+min-length <- 1
+2widths <- 1
+celsius2kelvin <- 1
+```
+
+The variable name "_age" cannot be used because it starts with a special character, the underscore. 
+
+### Question 2
+
+```{r eval=T, echo=T, error=T, warning=F, message=F}
+2+2
+```
+
+### Personal reflection
+
+Insert ~3-4 sentences of your personal take on the in-class or group discussion.
+
+### Whiteboard question
+
+Instructions: Place your photo in the same folder as this Rmd file. Remove the "eval=F" in the curly braces of the code chunk, and replace the file name with your photo.
+
+```{r, eval=F, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("Hematopoiesis_simple.svg.png")
+```
+
+
+
+
+
