@@ -50,3 +50,6 @@ rsconnect/
 
 #macOS creation
 .DS_Store
+
+#knitted pdfs
+*.pdf
