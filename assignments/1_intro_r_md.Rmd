@@ -1,10 +1,10 @@
----
-title: "1 Intro to R and R markdown"
-author: "Luis Alegria - mcb547"
-output: pdf_document
-editor_options: 
-  chunk_output_type: console
----
+|                                     |
+|-------------------------------------|
+| itle: "1 Intro to R and R markdown" |
+| uthor: "Luis Alegria - mcb547"      |
+| utput: pdf_document                 |
+| ditor_options:                      |
+| chunk_output_type: console          |
 
 ### Question 1
 
@@ -73,6 +73,41 @@ FOURS <- matrix(
 We would expect **`typeof(FOURS)`** to return "double" since the elements in a matrix must be of the same data type.
 
 ### Question 5
+
+**What is the class of x[1]? What is the class of x[[1]]?**
+
+If
+
+```         
+x <- 1:10
+x <- as.list(x)
+```
+
+then the class of `x[1]` is "list" while the class of x[[1]] is "integer".
+
+### Question 6
+
+**What is the length of the xlist object? What is its structure?**
+
+If
+
+```         
+xlist <- list(a = "Karthik Ram", b = 1:10, data = head(iris))
+```
+
+then `xlist` object is a list of length 3 with structure of element names `"a"`, `"b"`, and `"data"` with the first element being a character string, the second an integer vector, and the third a data frame.
+
+### Question 7
+
+You have a vector representing levels of exercise undertaken by 5 subjects
+
+“l”, “n”, “n”, “i”, “l” ; n=none, l=light, i=intense
+
+**What is the best way to represent this in R?**
+
+The best way to represent the vector is a factor with three levels and an order: `exercise <- factor(c('l', 'n', 'n', 'i', 'l'), levels = c('n', 'l', 'i'), ordered = TRUE)`.
+
+### Question 8
 
 ```{r eval=T, echo=T, error=T, warning=F, message=F}
 2+2
