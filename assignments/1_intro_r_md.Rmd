@@ -1,28 +1,78 @@
 ---
-title: "Assignment 1"
-author: "Your Name"
-output: html_document
+title: "1 Intro to R and R markdown"
+author: "Luis Alegria - mcb547"
+output: pdf_document
 editor_options: 
   chunk_output_type: console
 ---
-Plain text, write whatever you want.
 
 ### Question 1
 
-```{r eval=T, echo=T, error=T, warning=F, message=F}
-min_height <- 1
-max.height <- 1
-_age <- 1
-.mass <- 1
-MaxLength <- 1
-min-length <- 1
-2widths <- 1
-celsius2kelvin <- 1
+What is allowed or not allowed with variable names? **Try assigning values to the following variables. Which work and which do not? What is causing the errors?**
+
+For variable names in R:
+
+- allowed
+  - starts with a letter or period not followed by a number.
+  - can include letters, periods, numbers, and underscores.
+- not allowed
+  - start with an underscore
+  - start with a number
+
+```{r eval=F, results='hide', echo=T, error=T, warning=F, message=F}
+min_height <- 1 #works
+max.height <- 1 #works
+_age <- 1 #Error: unexpected symbol in "_age"
+.mass <- 1 #works, creates hidden variable
+MaxLength <- 1 #works
+min-length <- 1 #Error in min - length <- 1 : could not find function "-<-"
+2widths <- 1 #Error: unexpected symbol in "2widths"
+celsius2kelvin <- 1 #works
 ```
 
-The variable name "_age" cannot be used because it starts with a special character, the underscore. 
+In the assignment operations above `_age <- 1` throws an error since it begins with an underscore, `2widths <- 1` since it begins with a number, and `min-length <- 1` since it contains `-` so it is interpreted as a subtraction operator.
 
 ### Question 2
+
+**What aspects of the “Good” code help you understand the script?**
+
+Some aspects of code that help understand a script include:
+
+- Inserting comments (with `#`) to explain a piece of code.
+
+- Adding detailed headers that explain the objective of a script and how to use it.
+
+- Being explicit about code dependencies by loading all packages at top of script and limiting hard-coding of input and output files for a script.
+
+- Choosing descriptive names for variables.
+
+- Separate distinct portions of code into sections.
+
+### Question 3
+
+**What two properties are common to all of the vectors above?**
+
+Two properties common to all vectors are:
+
+1.  The have a length (greater than or equal to 0).
+2.  They contain elements of the same data type.
+
+### Question 4
+
+Consider the following matrix:
+
+```{r eval=F, echo=T, error=T, warning=F, message=F}
+FOURS <- matrix(
+  c(4, 4, 4, 4),
+  nrow = 2,
+  ncol = 2)
+```
+
+**Given that typeof(FOURS[1]) returns “double”, what would you expect typeof(FOURS) to return? How do you know this is the case even without running this code?**
+
+We would expect **`typeof(FOURS)`** to return "double" since the elements in a matrix must be of the same data type.
+
+### Question 5
 
 ```{r eval=T, echo=T, error=T, warning=F, message=F}
 2+2
@@ -30,7 +80,7 @@ The variable name "_age" cannot be used because it starts with a special charact
 
 ### Personal reflection
 
-Insert ~3-4 sentences of your personal take on the in-class or group discussion.
+Insert \~3-4 sentences of your personal take on the in-class or group discussion.
 
 ### Whiteboard question
 
@@ -39,8 +89,3 @@ Instructions: Place your photo in the same folder as this Rmd file. Remove the "
 ```{r, eval=F, echo = FALSE, out.width = "600px"}
 knitr::include_graphics("Hematopoiesis_simple.svg.png")
 ```
-
-
-
-
-
