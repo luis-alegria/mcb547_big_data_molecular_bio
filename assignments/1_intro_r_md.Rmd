@@ -1,10 +1,14 @@
-|                                     |
-|-------------------------------------|
-| itle: "1 Intro to R and R markdown" |
-| uthor: "Luis Alegria - mcb547"      |
-| utput: pdf_document                 |
-| ditor_options:                      |
-| chunk_output_type: console          |
+---
+title: "Assignment 1"
+author: "Luis Alegria - mcb547"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+\begin{center}
+\section*{Assignment Questions}
+\end{center}
 
 ### Question 1
 
@@ -108,6 +112,32 @@ You have a vector representing levels of exercise undertaken by 5 subjects
 The best way to represent the vector is a factor with three levels and an order: `exercise <- factor(c('l', 'n', 'n', 'i', 'l'), levels = c('n', 'l', 'i'), ordered = TRUE)`.
 
 ### Question 8
+
+**Knowing that data frames are lists, can columns be of different type? What type of structure do you expect to see when you explore the structure of the iris data frame? Hint: Use `str()`.**
+
+Since data frames are lists, then columns can be of different, heterogeneous data types. When running `str(iris)`, it outputs `iris` is a data frame of dimension `150 x 5`. Of the five columns 4 are numeric (Sepal length and width, and petal length and width), with the fifth one being a factor with 3 levels.
+
+### Question 9
+
+**What code would you use to create a new data frame that is the subset of iris with sepal length greater than or equal to 5.0?**
+
+The code is `iris[iris$Sepal.Length >= 5.0,]`.
+
+### Question 10
+
+What command would you use to create a new data frame that is the subset of iris with sepal length greater than or \> equal to 5.0 for the setosa species?
+
+The code is:
+
+```         
+iris[iris$Sepal.Length >= 5.0 & iris$Species == "setosa",]
+```
+
+### Question 11
+
+What command would you use to use the colon operator to index the first five observations of just the sepal length and species from `iris`?
+
+The code is: `iris[1:5, c(1, 5)]`
 
 ```{r eval=T, echo=T, error=T, warning=F, message=F}
 2+2
