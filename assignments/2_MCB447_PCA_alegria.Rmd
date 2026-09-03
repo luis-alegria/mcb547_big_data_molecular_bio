@@ -176,13 +176,13 @@ head(housing_pca_data)
 Each house now has a score for PC1, PC2, PC3, and so on. We can plot the first two PCs even though they were calculated using all of the numeric input measurements.
 
 ```{r plot_ames_pca}
-ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Sale_Price)) +
+ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Year_Remod_Add)) +
   geom_point(size = 2, alpha = 0.6) +
   labs(
     title = "Ames Housing Data in Principal Component Space",
     x = "PC1",
     y = "PC2",
-    color = "Sale price"
+    color = "Lot_Area"
   ) +
   theme_minimal()
 ```
@@ -191,19 +191,19 @@ ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Sale_Price)) +
 
 **What does each point in this PCA plot represent?**
 
-*Answer: Each point in the PCA plot represents a transformed point into PCA Space. The transformation is done by multiply the original data point by the eigenvector for the principal component.*
+*Answer: Each point in the PCA plot represents a transformed point from the original into PCA Space. The transformation is done by taking the dot product the original data point by the eigenvector for the principal component.*
 
 ### Question 4
 
 **Do houses with similar sale prices appear to occupy similar regions of PC space?**
 
-*Answer:*
+*Answer: Overall, yes, houses with similar prices appear to occupy similar regions of PC space but there appears to be some outliers.*
 
 ### Question 5
 
 **What information do PC1 and PC2 roughly capture? Hint: Use the `color` parameter of the ggplot code above to explore the data by recoloring the plot by different columns of the `housing` dataset.**
 
-*Answer:*
+*Answer: PC1 and PC2 roughly capture how similar houses are to one another.*
 
 
 The key idea is that **PC1 and PC2 each combine information from many of the original measurements**. We have turned a higher-dimensional feature space into a 2D view that tries to preserve the strongest patterns of variation.
@@ -360,7 +360,7 @@ print(round(variance_explained, 1))
 
 **How much variation is explained by PC1 and PC2?**
 
-*Answer:*
+*Answer:PC1 explains 73.0% of the variation while PC2 explains 22.9% of the variation in the Iris dataset.*
 
 With the eigenvectors (loadings) we can see which features contribute to each PC
 ```{r}
@@ -383,7 +383,7 @@ print(round(loadings, 3))
 
 **What do these loadings tell us about the relationships between the four measurements in the Iris dataset?**
 
-*Answer:*
+*Answer: The loadings (eigenvectors) *
 
 
 
@@ -462,7 +462,7 @@ p1 + p2
 
 **If PC1 from one method is the negative of PC1 from the other method, does that mean one calculation is wrong?**
 
-*Answer:* 
+*Answer:Yes, the calculations should be identical for the two methods* 
 
 Note: This is the syntax for retrieving loadings from the PC produced by the prcomp function
 ```{r}
@@ -550,10 +550,10 @@ biopsy_data <- biopsy_complete %>% select(-ID, -class)
 ```{r cancer_challenge}
 
 # 2. Run PCA with scaling
-# biopsy_pca <- prcomp(???, scale. = TRUE)
+biopsy_pca <- prcomp(biopsy_data, scale. = TRUE)
 
 # 3. Investigate how much variance each PC explains
-# summary(???)
+summary(biopsy_pca)
 
 # 4. Inspect the loadings
 # round(???, 3)
