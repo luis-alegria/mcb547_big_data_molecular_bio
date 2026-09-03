@@ -51,5 +51,6 @@ rsconnect/
 #macOS creation
 .DS_Store
 
-#knitted pdfs
+#knitted pdfs or jpegmaf
 *.pdf
+*.jpg

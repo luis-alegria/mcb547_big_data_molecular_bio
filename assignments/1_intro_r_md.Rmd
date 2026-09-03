@@ -6,9 +6,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-\begin{center}
-\section*{Assignment Questions}
-\end{center}
+\begingroup\centering\section*{Assignment Questions}\par\endgroup
 
 ### Question 1
 
@@ -139,18 +137,52 @@ What command would you use to use the colon operator to index the first five obs
 
 The code is: `iris[1:5, c(1, 5)]`
 
-```{r eval=T, echo=T, error=T, warning=F, message=F}
-2+2
+\begingroup\centering\section*{Textbook Exercises}\par\endgroup
+
+### Exercise 1
+
+```{r eval=T, echo=T, error=T, message=FALSE, warning=FALSE}
+data(mtcars)
+mtToTib <- tibble::tibble(mtcars)
+summary(mtToTib)
 ```
 
-### Personal reflection
+### Exercise 2
 
-Insert \~3-4 sentences of your personal take on the in-class or group discussion.
+```{r eval=T, echo=T, error=T, message=FALSE, warning=FALSE}
+selectedData <- dplyr::select(mtToTib, -c("qsec", "vs"))
+selectedData
+```
 
-### Whiteboard question
+### Exercise 3
 
-Instructions: Place your photo in the same folder as this Rmd file. Remove the "eval=F" in the curly braces of the code chunk, and replace the file name with your photo.
+```{r eval=T, echo=T, error=T, message=FALSE, warning=FALSE}
+filteredData <- dplyr::filter(mtToTib, cyl != 8)
+filteredData
+```
 
-```{r, eval=F, echo = FALSE, out.width = "600px"}
-knitr::include_graphics("Hematopoiesis_simple.svg.png")
+### Exercise 5
+
+```{r eval=T, echo=T, error=T, message=FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(mtToTib, aes(x = drat, y = wt, colour = carb)) +
+  geom_point() +
+  theme_bw()
+```
+
+```{r eval=T, echo=T, error=T, message=FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(mtToTib, aes(x = drat, y = wt, colour = as.factor(carb))) +
+  geom_point() +
+  theme_bw()
+```
+
+\begingroup\centering\section*{Personal Reflection}\par\endgroup
+
+During the whiteboard exercise there was a discussion in our group on how to best answer the third part. Initially, someone suggested that $\log_2(0)$ is equal to $-\infty$. Mathematically, $\log_2(0)$ is undefined, not equal to $-\infty$. It's more accurate to say that the limit of $\log_2(x)$ as it approaches 0 from the right is $-\infty$.
+
+\begingroup\centering\section*{Whiteboard Question}\par\endgroup
+
+```{r, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("IMG_0890.jpg")
 ```
