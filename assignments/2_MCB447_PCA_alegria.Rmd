@@ -1,0 +1,604 @@
+
+---
+title: "Understanding Dimensionality Reduction: Principal Component Analysis (PCA)"
+subtitle: ""
+author: "Luis Alegría"
+date: "2026-09-01" #`r Sys.Date()`
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: tango
+---
+
+## Formatting code for the knitted document
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 6
+)
+
+```
+
+## Setup
+
+**Before class, check that you have each required library installed**
+
+To install packages, click the 'Packages' tab on the lower right pane, then click 'Install' and add the missing packages
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+library(mlr3data)
+```
+
+
+
+
+## Assignment Overview
+
+In this activity, you will learn how PCA reduces a dataset with many measurements into a smaller number of major patterns of variation.
+
+You will:
+
+1. Explore why high-dimensional data can be difficult to visualize.
+2. Use `prcomp()` to run PCA automatically.
+3. Work through the main steps of PCA manually to understand what the calculation is doing.
+4. Apply PCA to a new biological dataset and interpret the principal components using variance explained, loadings, and plots.
+
+Throughout the assignment, answer the **numbered questions** as you encounter them.
+
+## Part 1: The Problem 
+
+To motivate the purpose of dimensionality reduction, we will start with a real housing dataset from **Ames, Iowa**. The Ames Housing dataset contains measurements describing individual houses and their sale prices. Each **row** is one house, and each **column** is a measurement or feature.
+
+- **Number of observations** = how many houses we measured
+- **Number of dimensions** = how many measurements describe each house
+
+
+The full dataset contains many numeric and categorical measurements. For this PCA lesson, we will focus only on the **numeric measurements**. We will keep `Sale_Price` available for visualization, but leave it out of the PCA itself.
+
+```{r ames_data}
+# Load the Ames Housing dataset from mlr3data
+data("ames_housing", package = "mlr3data")
+housing <- as.data.frame(ames_housing) %>%
+    dplyr::select(
+    Sale_Price,
+    First_Flr_SF,
+    Total_Bsmt_SF,
+    Lot_Area,
+    Garage_Area,
+    Year_Built,
+    Year_Remod_Add,
+    TotRms_AbvGrd,
+    Mo_Sold
+  ) %>%
+  tidyr::drop_na()
+
+cat("Ames housing data:\n",
+    "Observations:", nrow(housing), "\n",
+    "Columns:", ncol(housing), "\n\n")
+```
+
+```{r}
+head(housing)
+```
+
+
+
+### Question 1
+
+**In this dataset, what does one observation represent? What does one dimension represent?**
+
+*Answer: An observation represents one house. One dimension is a feature or a measurement for a house.*
+
+### Looking at Variables Two at a Time
+
+We can easily visualize relationships between **pairs** of measurements. To keep the plot readable, we'll look at a random sample of 1,000 houses and a small set of intuitive numeric variables.
+
+```{r ames_pairs}
+set.seed(123)
+
+housing_subset <- housing %>%
+  dplyr::slice_sample(n = 1000)
+
+pairs(
+  housing_subset,
+  main = "Pairwise Relationships in the Ames Housing Data"
+)
+```
+
+### Question 2
+
+**What relationships can you see between individual pairs of variables? Which measurements seem to change together?**
+
+*Answer: Some of the features appear to have linear relationships. Some of the features appear to be distributions. Some of the measurements which change together include: Sale_Price with First_Flr_SF, First_Flr_SF with Total_Bsmt_SF, Sale_Price and Garage_Area.*
+
+
+As datasets gain more measurements, the number of possible pairwise plots grows quickly. In biology, the problem can be much larger: a gene-expression dataset may contain measurements for **thousands of genes** for every sample or cell.
+
+This motivates **dimensionality reduction**: can we summarize many related measurements using just a few new variables?
+
+
+### The Idea Behind PCA
+
+**Principal Component Analysis (PCA)** finds new directions through the cloud of data points that capture as much of the variation between observations as possible.
+
+A **principal component** is a new variable made from a weighted combination of the original measurements.
+
+In housing data, measurements such as living area, basement area, garage size, number of rooms, and year built likely contains overlapping information. PCA asks whether some of that shared variation can be summarized by a smaller number of new axes.
+
+- **PC1** captures the largest pattern of variation in the whole dataset.
+- **PC2** captures the next largest pattern that is independent of PC1.
+- Additional PCs capture progressively smaller patterns.
+
+Importantly, PCA can produce as many PCs as there are numeric input dimensions. **Dimensionality reduction happens when we choose to keep only the first few PCs.**
+
+## Part 2: Automatic PCA on the Ames Housing Data
+
+Let's first see what PCA does using R's built-in `prcomp()` function.
+
+For PCA, we will use the **numeric housing features** but leave out `Sale_Price`, because it is the outcome we might ultimately want to explain or predict. 
+
+```{r pca_ames}
+
+# Leave sale price out of the PCA inputs
+housing_features <- housing %>%
+  dplyr::select(-Sale_Price)
+
+cat("Numeric PCA input:\n",
+    "Houses:", nrow(housing_features), "\n",
+    "Dimensions:", ncol(housing_features), "\n")
+
+# Run PCA
+# scale. = TRUE puts measurements with different units on comparable scales
+housing_pca <- prcomp(housing_features, scale. = TRUE)
+
+# Add the new PC coordinates back to the matching rows
+housing_pca_data <- cbind(housing, housing_pca$x)
+```
+
+Now take a look at the new columns in our dataframe. Press the right arrow to see newly added columns
+
+```{r}
+head(housing_pca_data)
+```
+
+### Visualizing the First Two Principal Components
+
+Each house now has a score for PC1, PC2, PC3, and so on. We can plot the first two PCs even though they were calculated using all of the numeric input measurements.
+
+```{r plot_ames_pca}
+ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Sale_Price)) +
+  geom_point(size = 2, alpha = 0.6) +
+  labs(
+    title = "Ames Housing Data in Principal Component Space",
+    x = "PC1",
+    y = "PC2",
+    color = "Sale price"
+  ) +
+  theme_minimal()
+```
+
+### Question 3
+
+**What does each point in this PCA plot represent?**
+
+*Answer: Each point in the PCA plot represents a transformed point into PCA Space. The transformation is done by multiply the original data point by the eigenvector for the principal component.*
+
+### Question 4
+
+**Do houses with similar sale prices appear to occupy similar regions of PC space?**
+
+*Answer:*
+
+### Question 5
+
+**What information do PC1 and PC2 roughly capture? Hint: Use the `color` parameter of the ggplot code above to explore the data by recoloring the plot by different columns of the `housing` dataset.**
+
+*Answer:*
+
+
+The key idea is that **PC1 and PC2 each combine information from many of the original measurements**. We have turned a higher-dimensional feature space into a 2D view that tries to preserve the strongest patterns of variation.
+
+
+## Part 3: How PCA Works — Step-by-Step with Iris
+
+Now let's understand what PCA is actually doing behind the scenes. For the manual calculation, we'll switch to the smaller **Iris dataset**, which has four numeric measurements for 150 flowers.
+
+### The Step-by-Step Way
+
+We'll work through all four Iris measurements and reproduce the same calculation that `prcomp()` performs automatically.
+
+We first want to standardize each feature with mean centering and scaling (steps 1 and 2). We will illustrate the purpose of this with example data measuring height in cm and inches. 
+
+| Observation | Length (cm) | Length (in) |
+|---|---:|---:|
+| 1 | 100 | 39.37 |
+| 2 | 110 | 43.31 |
+| 3 | 120 | 47.24 |
+
+#### After mean-centering
+
+| Observation | Length (cm) | Length (in) |
+|---|---:|---:|
+| 1 | -10 | -3.94 |
+| 2 | 0 | 0.00 |
+| 3 | 10 | 3.94 |
+
+#### After centering and scaling
+
+| Observation | Length (cm) | Length (in) |
+|---|---:|---:|
+| 1 | -1 | -1 |
+| 2 | 0 | 0 |
+| 3 | 1 | 1 |
+
+
+**Step 1: Center the data (subtract the mean)**
+- This moves the data so it's centered around (0,0,0,0)
+- Why? We care about variation, not absolute values
+
+```{r pca_step_by_step}
+# Load the Iris dataset
+data(iris)
+
+# Use all 4 numeric Iris variables
+iris_4d <- iris[, c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width")]
+
+print("Original 4D data (first 10 rows):")
+print(head(iris_4d, 10))
+```
+
+
+```{r}
+# Step 1: Center the data (subtract the mean)
+centered_data <- scale(iris_4d, center = TRUE, scale = FALSE)
+print("Step 1: Centered data (first 10 rows):")
+print(head(centered_data, 10))
+```
+Now, each column has a mean of zero
+```{r}
+colMeans(centered_data)
+```
+
+
+
+**Step 2: Scale the data (divide by standard deviation)**
+- This makes all variables have the same scale
+- We don't want one variable to dominate just because it has larger numbers
+- For example height in centimeters and height in meters has the same information content
+
+```{r pca_step_2}
+# Step 2: Scale the data (divide by standard deviation)
+scaled_data <- scale(iris_4d, center = TRUE, scale = TRUE)
+print("Step 2: Scaled data (first 10 rows):")
+print(head(scaled_data, 10))
+```
+
+```{r}
+# Check that scaling worked (should be close to 0 mean and 1 sd)
+cat(
+  "Verification - means should be ~0, SDs should be ~1:\n",
+  "Mean of Sepal.Length:", round(mean(scaled_data[, 1]), 6), "\n",
+  "SD of Sepal.Length:", round(sd(scaled_data[, 1]), 6), "\n"
+)
+```
+
+
+**Step 3: Calculate the covariance matrix**
+- Captures how variables vary together 
+- Diagonal shows variance of each variable 
+- Off-diagonal shows covariance between variables
+
+```{r pca_step_3}
+cov_matrix <- cov(scaled_data)
+print("Step 3: Covariance matrix:")
+
+print("Correlation matrix (same as covariance for scaled data):")
+print(round(cor(scaled_data), 6))
+```
+Discuss: Which variables co-vary?
+
+**Step 4: Find eigenvalues and eigenvectors**
+- **Eigenvalues**: How much variance each direction explains
+- **Eigenvectors**: The directions (these become our principal components)
+- **Loadings**: The values in each eigenvector. They tell us how strongly each original variable contributes to that principal component
+
+### Step 4: Find the Main Directions of Variation
+
+PCA asks a simple question:
+
+**Which directions through the data show the most variation?**
+
+Imagine the observations as a cloud of points. PCA looks for a new axis through that cloud where the observations are spread out the most.
+
+The `eigen()` function finds these directions for us.
+
+It returns two important things:
+
+* **Eigenvectors** = the directions through the data
+  Each eigenvector becomes a principal component.
+
+* **Eigenvalues** = how much variation is captured in each direction
+  A larger eigenvalue means that direction captures more of the differences among the observations.
+
+So:
+
+* **PC1** is the direction that captures the most variation
+* **PC2** captures the next most variation
+* **PC3** captures the next most, and so on
+
+
+**Eigenvectors tell us which way to look through the data. Eigenvalues tell us how much variation we see in that direction.**
+
+
+```{r pca_step_4}
+
+# What does eigen() do?
+# The eigen() function finds the directions where the data varies the most by solving the equation:
+# covariance_matrix × eigenvector = eigenvalue × eigenvector
+
+eigen_result <- eigen(cov_matrix)
+print("Step 4: Eigenvalues (variance explained by each PC):")
+print(round(eigen_result$values, 6))
+
+variance_explained <- eigen_result$values / sum(eigen_result$values) * 100
+
+cat("Step 4: Variance explained by each PC (%):\n")
+print(round(variance_explained, 1))
+```
+
+### Question 6
+
+**How much variation is explained by PC1 and PC2?**
+
+*Answer:*
+
+With the eigenvectors (loadings) we can see which features contribute to each PC
+```{r}
+print("Step 4: Eigenvectors (these are the loadings!):")
+print(round(eigen_result$vectors, 6))
+
+
+# Add variable names as rows and PC names as columns to make them more interpretable
+loadings <- eigen_result$vectors
+rownames(loadings) <- colnames(iris_4d)
+colnames(loadings) <- paste0("PC", 1:ncol(loadings))
+
+cat("\nStep 4: Eigenvectors (loadings):\n")
+print(round(loadings, 3))
+
+```
+
+
+### Question 7
+
+**What do these loadings tell us about the relationships between the four measurements in the Iris dataset?**
+
+*Answer:*
+
+
+
+
+**Step 5: Transform our data into PC-space**
+- Multiply scaled data by eigenvectors
+- Each row becomes a new coordinate in PC space
+- PC1 = scaled_data × eigenvector1, PC2 = scaled_data × eigenvector2, etc.
+- 
+- ***Key point** The coordinate along PC1 tells us where that observation falls along the direction of greatest variation.
+- The coordinate along PC2 tells us where it falls along the second-greatest direction of variation, and so on.
+
+
+```{r pca_step_5}
+# Step 5: Calculate principal components
+# PC = scaled_data × eigenvector
+PC1_manual <- scaled_data %*% eigen_result$vectors[, 1]
+
+# STUDENT TASK: Use the second eigenvector to calculate PC2
+PC2_manual <- scaled_data %*% eigen_result$vectors[, 2]
+
+manual_pca <- data.frame(
+  PC1_manual = PC1_manual,
+  PC2_manual = PC2_manual,
+  Species = iris$Species
+)
+
+print("Step 5: Manual PCA results (first 10 rows):")
+print(head(manual_pca, 10))
+```
+
+
+```{r}
+ggplot(manual_pca, aes(x = PC1_manual, y = PC2_manual, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Manual PCA Calculation") +
+  theme_minimal()
+```
+
+
+### Comparing Manual vs. Automatic PCA
+
+```{r compare_pca}
+# Run automatic PCA on the same 4D Iris data
+pca_4d <- prcomp(iris_4d, scale. = TRUE)
+
+# Compare results
+comparison <- data.frame(
+  Manual_PC1 = PC1_manual,
+  Auto_PC1 = pca_4d$x[,1],
+  Manual_PC2 = PC2_manual,
+  Auto_PC2 = pca_4d$x[,2],
+  Species = iris$Species
+)
+
+print("Comparison: Manual vs Automatic PCA (first 10 rows):")
+print(head(comparison, 10))
+
+# Visualize both results
+
+p1 <- ggplot(comparison, aes(x = Manual_PC1, y = Manual_PC2, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Manual PCA Calculation") +
+  theme_minimal()
+
+p2 <- ggplot(comparison, aes(x = Auto_PC1, y = Auto_PC2, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Automatic PCA (prcomp)") +
+  theme_minimal()
+
+p1 + p2
+```
+
+
+### Question 8
+
+**If PC1 from one method is the negative of PC1 from the other method, does that mean one calculation is wrong?**
+
+*Answer:* 
+
+Note: This is the syntax for retrieving loadings from the PC produced by the prcomp function
+```{r}
+
+# Access variance explained by each PC
+summary(pca_4d)
+
+# Access loadings
+pca_4d$rotation
+```
+
+### Review of Step of PCA
+
+**Step 1: Centering**
+- Subtract the mean from each variable
+- This moves the data so it's centered around (0,0)
+- Why? We care about variation, not absolute values
+
+**Step 2: Scaling**  
+- Divide by the standard deviation
+- This makes all variables have the same scale
+- Why? We don't want one variable to dominate just because it has larger numbers
+
+**Step 3: Covariance Matrix**
+- Shows how variables vary together
+- Diagonal shows variance of each variable
+- Off-diagonal shows covariance between variables
+
+**Step 4: Eigenvalues & Eigenvectors**
+- **Eigenvalues**: How much variance each direction explains
+- **Eigenvectors**: The directions (these become our principal components)
+- The eigenvector with the largest eigenvalue is PC1
+
+**Step 5: Calculate PCs**
+- Multiply scaled data by eigenvectors (Transformation)
+- Each observation now gets a position along PC1, PC2, PC3, and so on.
+
+
+## Part 4: Final Challenge — Biopsy data
+
+Here, we will examine the MASS::biopsy(Wisconsin Breast Cancer biopsy) dataset. It contains measurements made on cells taken from breast mass samples, with the goal of distinguishing benign from malignant samples.
+
+Each row is one breast biopsy sample / patient case. For that sample, pathologists measured several features of the cells seen in the biopsy, such as cell size, cell shape, nuclei, and mitotic activity.
+
+First, we will do some preprocessing of the data to get it into a good format
+```{r}
+
+
+data(biopsy, package = "MASS" )
+
+colnames(biopsy)[2:10] <- c(
+  "Clump_Thickness",
+  "Cell_Size_Uniformity",
+  "Cell_Shape_Uniformity",
+  "Marginal_Adhesion",
+  "Epithelial_Cell_Size",
+  "Bare_Nuclei",
+  "Bland_Chromatin",
+  "Normal_Nucleoli",
+  "Mitoses"
+)
+
+# Look at the dataset
+head(biopsy)
+
+```
+
+```{r}
+
+complete <- complete.cases(biopsy)
+biopsy_complete <- biopsy[complete, ]
+
+
+# Save diagnosis separately -- PCA does NOT see this
+diagnosis <- biopsy_complete %>% select(class)
+
+# Keep only the numeric cell measurements
+biopsy_data <- biopsy_complete %>% select(-ID, -class)
+
+
+```
+
+
+
+```{r cancer_challenge}
+
+# 2. Run PCA with scaling
+biopsy_pca <- prcomp(???, scale. = TRUE)
+
+# 3. Investigate how much variance each PC explains
+summary(???)
+
+# 4. Inspect the loadings
+round(???, 3)
+
+```
+
+Now plot the transformed coordinate
+```{r}
+# Combine the PCA with the diagnosis labels
+# Hint, the data is stored as $x in the prcomp output object. 
+biopsy_pca_labeled <- cbind(???, diagnosis)
+
+# Make a plot of PC's vs. diagnosis
+# You can use this format to also try out plotting different PC's beyond PC1 and PC2.
+ggplot(biopsy_pca_labeled, aes(x = ???, y = ???, color = ??)) +
+  geom_point()
+
+```
+
+
+### Question 9
+
+**How many principal components would you keep to summarize most of the variance in the biopsy data? Explain your choice using the cumulative proportion of variance.**
+
+*Answer:*
+
+### Question 10
+
+**How would you interpret PC1? Explain your reasoning using both the loadings and the plot.**
+
+*Answer:*
+
+
+### Question 11
+
+**How would you interpret PC2? Explain your reasoning using both the loadings and the plot.**
+
+*Answer:*
+
+
+### Final Challenge Question 12
+
+**In 2–3 sentences, summarize what PCA revealed about this dataset that might otherwise be difficult to see. Which PCs appear to be useful for predicting diagnosis?**
+
+*Answer:*
+
+
+
+
