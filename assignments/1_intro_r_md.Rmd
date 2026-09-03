@@ -38,17 +38,13 @@ In the assignment operations above `_age <- 1` throws an error since it begins w
 
 **What aspects of the “Good” code help you understand the script?**
 
-Some aspects of code that help understand a script include:
+- Inserting comments at top of what the script performs.
 
-- Inserting comments (with `#`) to explain a piece of code.
+- Inserting comment about input required.
 
-- Adding detailed headers that explain the objective of a script and how to use it.
-
-- Being explicit about code dependencies by loading all packages at top of script and limiting hard-coding of input and output files for a script.
+- Annotating, explaining what a piece of code does (average body weight calculation.)
 
 - Choosing descriptive names for variables.
-
-- Separate distinct portions of code into sections.
 
 ### Question 3
 
@@ -56,7 +52,7 @@ Some aspects of code that help understand a script include:
 
 Two properties common to all vectors are:
 
-1.  The have a length (greater than or equal to 0).
+1.  The have a length.
 2.  They contain elements of the same data type.
 
 ### Question 4
@@ -113,7 +109,7 @@ The best way to represent the vector is a factor with three levels and an order:
 
 **Knowing that data frames are lists, can columns be of different type? What type of structure do you expect to see when you explore the structure of the iris data frame? Hint: Use `str()`.**
 
-Since data frames are lists, then columns can be of different, heterogeneous data types. When running `str(iris)`, it outputs `iris` is a data frame of dimension `150 x 5`. Of the five columns 4 are numeric (Sepal length and width, and petal length and width), with the fifth one being a factor with 3 levels.
+Since data frames are lists, then different columns can be of different data types. When running `str(iris)`, it outputs `iris` is a data frame of dimension `150 x 5`. Of the five columns 4 are numeric (Sepal length and width, and petal length and width), with the fifth one being a factor with 3 levels.
 
 ### Question 9
 
