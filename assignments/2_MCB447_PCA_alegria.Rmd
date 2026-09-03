@@ -3,7 +3,7 @@
 title: "Understanding Dimensionality Reduction: Principal Component Analysis (PCA)"
 subtitle: ""
 author: "Luis Alegría"
-date: "2026-09-01" #`r Sys.Date()`
+date: "2026-09-01"
 output: 
   html_document:
     toc: true
@@ -11,6 +11,7 @@ output:
     theme: cosmo
     highlight: tango
 ---
+#Sys.Date()
 
 ## Formatting code for the knitted document
 ```{r setup, include=FALSE}
@@ -118,7 +119,7 @@ pairs(
 
 **What relationships can you see between individual pairs of variables? Which measurements seem to change together?**
 
-*Answer: Some of the features appear to have linear relationships. Some of the features appear to be distributions. Some of the measurements which change together include: Sale_Price with First_Flr_SF, First_Flr_SF with Total_Bsmt_SF, Sale_Price and Garage_Area.*
+*Answer: Some of the features appear to have linear relationships. These features are Sale_Price and First_Flr_SF, First_Flr_SF and Total_Bsmt_SF, and Sale_Price with Total_Bsmt_SF. In addition, Garage_Area appears to change a little with Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Year_Built and Year_Remodel appear to change together with some house being remodeled the same year they were built. TotRms_AbvGrd may have a weak relationship Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Mo_sold does not appear to have any relationship to other variables.*
 
 
 As datasets gain more measurements, the number of possible pairwise plots grows quickly. In biology, the problem can be much larger: a gene-expression dataset may contain measurements for **thousands of genes** for every sample or cell.
@@ -549,13 +550,13 @@ biopsy_data <- biopsy_complete %>% select(-ID, -class)
 ```{r cancer_challenge}
 
 # 2. Run PCA with scaling
-biopsy_pca <- prcomp(???, scale. = TRUE)
+# biopsy_pca <- prcomp(???, scale. = TRUE)
 
 # 3. Investigate how much variance each PC explains
-summary(???)
+# summary(???)
 
 # 4. Inspect the loadings
-round(???, 3)
+# round(???, 3)
 
 ```
 
@@ -563,12 +564,12 @@ Now plot the transformed coordinate
 ```{r}
 # Combine the PCA with the diagnosis labels
 # Hint, the data is stored as $x in the prcomp output object. 
-biopsy_pca_labeled <- cbind(???, diagnosis)
+# biopsy_pca_labeled <- cbind(???, diagnosis)
 
 # Make a plot of PC's vs. diagnosis
 # You can use this format to also try out plotting different PC's beyond PC1 and PC2.
-ggplot(biopsy_pca_labeled, aes(x = ???, y = ???, color = ??)) +
-  geom_point()
+# ggplot(biopsy_pca_labeled, aes(x = ???, y = ???, color = ??)) +
+#   geom_point()
 
 ```
 
