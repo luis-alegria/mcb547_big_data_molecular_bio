@@ -176,7 +176,7 @@ head(housing_pca_data)
 Each house now has a score for PC1, PC2, PC3, and so on. We can plot the first two PCs even though they were calculated using all of the numeric input measurements.
 
 ```{r plot_ames_pca}
-ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Lot_Area )) +
+ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Year_Remod_Add)) +
   geom_point(size = 1, alpha = 0.25) +
   labs(
     title = "Ames Housing Data in Principal Component Space",
@@ -305,7 +305,7 @@ print("Step 3: Covariance matrix:")
 print("Correlation matrix (same as covariance for scaled data):")
 print(round(cor(scaled_data), 6))
 ```
-Discuss: Which variables co-vary?
+Discuss: Which variables co-vary? Based on the values of the covariance matrix, Sepal.Length covaries with Sepal.Width (negative), Petal.Length and Petal.Width (both positive), Sepal.Width covaries with Petal.Length and Petal.Width (both negative), and Petal.Length covaries with Petal.Width (positive). 
 
 **Step 4: Find eigenvalues and eigenvectors**
 - **Eigenvalues**: How much variance each direction explains
@@ -360,7 +360,7 @@ print(round(variance_explained, 1))
 
 **How much variation is explained by PC1 and PC2?**
 
-*Answer:PC1 explains 73.0% of the variation while PC2 explains 22.9% of the variation in the Iris dataset.*
+*Answer:PC1 explains 73.0% of the variation while PC2 explains 22.9% of the variation in the Iris dataset and both explain 95.9%.*
 
 With the eigenvectors (loadings) we can see which features contribute to each PC
 ```{r}
@@ -383,10 +383,7 @@ print(round(loadings, 3))
 
 **What do these loadings tell us about the relationships between the four measurements in the Iris dataset?**
 
-*Answer: The loadings (eigenvectors) *
-
-
-
+*Answer: The loadings, or values in the eigenvectors, in PC1 reveal that Sepal.Length, Petal.Length, and Petal.Width all covary in the dataset since they all are positive and Sepal.Width covaries in the opoosite direction to the first three. The loadings for PC2 reveal that Sepal.Width, loading value of -0.923,  contributes most to PC2 and has a weak relationship to the other variables as seem in the covariance matrix.*
 
 **Step 5: Transform our data into PC-space**
 - Multiply scaled data by eigenvectors
@@ -462,7 +459,7 @@ p1 + p2
 
 **If PC1 from one method is the negative of PC1 from the other method, does that mean one calculation is wrong?**
 
-*Answer:Yes, the calculations should be identical for the two methods* 
+*Answer: One calculation is not necessarily wrong if its the negative of the other. If v is an eigenvector for PC1 then -v just flips axis and the structure of the data stays.* 
 
 Note: This is the syntax for retrieving loadings from the PC produced by the prcomp function
 ```{r}
@@ -556,7 +553,7 @@ biopsy_pca <- prcomp(biopsy_data, scale. = TRUE)
 summary(biopsy_pca)
 
 # 4. Inspect the loadings
-# round(???, 3)
+round(biopsy_pca$rotation, 3)
 
 ```
 
@@ -564,12 +561,13 @@ Now plot the transformed coordinate
 ```{r}
 # Combine the PCA with the diagnosis labels
 # Hint, the data is stored as $x in the prcomp output object. 
-# biopsy_pca_labeled <- cbind(???, diagnosis)
+biopsy_pca_labeled <- cbind(biopsy_pca$x, diagnosis)
 
 # Make a plot of PC's vs. diagnosis
 # You can use this format to also try out plotting different PC's beyond PC1 and PC2.
-# ggplot(biopsy_pca_labeled, aes(x = ???, y = ???, color = ??)) +
-#   geom_point()
+ggplot(biopsy_pca_labeled, aes(x = PC1, y = PC2, color = class)) +
+  geom_point() +
+  labs(title = "Wisconsin Breast Cancer biopsy Dataset in PC Space.")
 
 ```
 
@@ -578,27 +576,27 @@ Now plot the transformed coordinate
 
 **How many principal components would you keep to summarize most of the variance in the biopsy data? Explain your choice using the cumulative proportion of variance.**
 
-*Answer:*
+*Answer: To summarize most of the variance in the biopsy data three principal components can be used since PC1 accounts for about 65.6% variation in the data, adding PC2 brings the cumulative proportion to about 74.1, and PC3 to about 80.1%. Adding more PCs would contribute marginally.*
 
 ### Question 10
 
 **How would you interpret PC1? Explain your reasoning using both the loadings and the plot.**
 
-*Answer:*
+*Answer: In PC1 all the features have roughly same negative values for the loadings. This means that no one feature dominates this PC and represent a patient's cell morphology with all nine features contributing equally. In the plot we see that along this axis there is some clear separation between benign/malignant patient samples with benign samples tending to have positive values of PC1 while malignant ones tend to have negative values.*
 
 
 ### Question 11
 
 **How would you interpret PC2? Explain your reasoning using both the loadings and the plot.**
 
-*Answer:*
+*Answer: In the loadings for PC2 we see that the feature Mitoses has a value of 0.906 meaning it is the largest contributor to this principal component. Along PC2 in the plot we that the separation for benign and malignant patient sample is unclear. Since Mitoses is a contributing feature in malignancies, not a defining one, this PC would not separate benign/malignant samples well.*
 
 
 ### Final Challenge Question 12
 
 **In 2–3 sentences, summarize what PCA revealed about this dataset that might otherwise be difficult to see. Which PCs appear to be useful for predicting diagnosis?**
 
-*Answer:*
+*Answer: PCA for this dataset reveals that no one feature is dominant in predicting a benign/malignant diagnosis for a patient and all contibuted equally to the separation seen in the plot. It appears that PC1 is useful in predicting diagnosis.*
 
 
 
