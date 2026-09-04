@@ -176,13 +176,13 @@ head(housing_pca_data)
 Each house now has a score for PC1, PC2, PC3, and so on. We can plot the first two PCs even though they were calculated using all of the numeric input measurements.
 
 ```{r plot_ames_pca}
-ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Year_Remod_Add)) +
-  geom_point(size = 2, alpha = 0.6) +
+ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Mo_Sold)) +
+  geom_point(size = 2, alpha = 0.2) +
   labs(
     title = "Ames Housing Data in Principal Component Space",
     x = "PC1",
     y = "PC2",
-    color = "Lot_Area"
+    color = "Pending"
   ) +
   theme_minimal()
 ```
@@ -191,19 +191,19 @@ ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Year_Remod_Add)) +
 
 **What does each point in this PCA plot represent?**
 
-*Answer: Each point in the PCA plot represents a transformed point from the original into PCA Space. The transformation is done by taking the dot product the original data point by the eigenvector for the principal component.*
+*Answer: Each point in the PCA plot represents a house with transformed features into PCA Space. The transformation is done by taking the dot product of the each point by the eigenvector for PC1 and PC2.*
 
 ### Question 4
 
 **Do houses with similar sale prices appear to occupy similar regions of PC space?**
 
-*Answer: Overall, yes, houses with similar prices appear to occupy similar regions of PC space but there appears to be some outliers.*
+*Answer: From the plot, it appears that similarly priced homes occupy the same areas of PC space. Many of the homes with lower prices appear to occupy the upper right area of PC space although there appear to be some outliers. *
 
 ### Question 5
 
 **What information do PC1 and PC2 roughly capture? Hint: Use the `color` parameter of the ggplot code above to explore the data by recoloring the plot by different columns of the `housing` dataset.**
 
-*Answer: PC1 and PC2 roughly capture how similar houses are to one another.*
+*Answer: In coloring the plot with the different columns, *
 
 
 The key idea is that **PC1 and PC2 each combine information from many of the original measurements**. We have turned a higher-dimensional feature space into a 2D view that tries to preserve the strongest patterns of variation.
