@@ -97,7 +97,7 @@ head(housing)
 
 **In this dataset, what does one observation represent? What does one dimension represent?**
 
-*Answer: An observation represents one house. One dimension is a feature or a measurement for a house.*
+*Answer: An observation represents one house or one row of data. One dimension or column represents a feature or a measurement for the houses.*
 
 ### Looking at Variables Two at a Time
 
@@ -119,7 +119,7 @@ pairs(
 
 **What relationships can you see between individual pairs of variables? Which measurements seem to change together?**
 
-*Answer: Some of the features appear to have linear relationships. These features are Sale_Price and First_Flr_SF, First_Flr_SF and Total_Bsmt_SF, and Sale_Price with Total_Bsmt_SF. In addition, Garage_Area appears to change a little with Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Year_Built and Year_Remodel appear to change together with some house being remodeled the same year they were built. TotRms_AbvGrd may have a weak relationship Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Mo_sold does not appear to have any relationship to other variables.*
+*Answer: Some of the features appear to have linear relationships. These features are Sale_Price and First_Flr_SF, First_Flr_SF and Total_Bsmt_SF, and Sale_Price with Total_Bsmt_SF. Lot area may be changing slightly with Sale_Price, First_Flr_SQ, and Total_Bsmt_SF. In addition, Garage_Area appears to change with Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Year_Built and Year_Remodel appear to change together with some houses being remodeled the same year they were built. TotRms_AbvGrd may have a weak relationship Sale_Price, First_Flr_SF, and Total_Bsmt_SF. Mo_sold does not appear to have any relationship to other variables.*
 
 
 As datasets gain more measurements, the number of possible pairwise plots grows quickly. In biology, the problem can be much larger: a gene-expression dataset may contain measurements for **thousands of genes** for every sample or cell.
@@ -176,13 +176,13 @@ head(housing_pca_data)
 Each house now has a score for PC1, PC2, PC3, and so on. We can plot the first two PCs even though they were calculated using all of the numeric input measurements.
 
 ```{r plot_ames_pca}
-ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Mo_Sold)) +
-  geom_point(size = 2, alpha = 0.2) +
+ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Lot_Area )) +
+  geom_point(size = 1, alpha = 0.25) +
   labs(
     title = "Ames Housing Data in Principal Component Space",
     x = "PC1",
     y = "PC2",
-    color = "Pending"
+    color = "Year Remodeled"
   ) +
   theme_minimal()
 ```
@@ -191,19 +191,19 @@ ggplot(housing_pca_data, aes(x = PC1, y = PC2, color = Mo_Sold)) +
 
 **What does each point in this PCA plot represent?**
 
-*Answer: Each point in the PCA plot represents a house with transformed features into PCA Space. The transformation is done by taking the dot product of the each point by the eigenvector for PC1 and PC2.*
+*Answer: Each point in the PCA plot represents a house with transformed features into PCA Space. The transformation is done by taking the dot product of a house's scaled features by the eigenvector for PC1 and PC2.*
 
 ### Question 4
 
 **Do houses with similar sale prices appear to occupy similar regions of PC space?**
 
-*Answer: From the plot, it appears that similarly priced homes occupy the same areas of PC space. Many of the homes with lower prices appear to occupy the upper right area of PC space although there appear to be some outliers. *
+*Answer: From the plot, it appears that similarly priced homes occupy the same areas of PC space. Many of the homes with lower prices appear to occupy the upper right area of PC space although there appear to be some outliers in the bottom left quadrant.*
 
 ### Question 5
 
 **What information do PC1 and PC2 roughly capture? Hint: Use the `color` parameter of the ggplot code above to explore the data by recoloring the plot by different columns of the `housing` dataset.**
 
-*Answer: In coloring the plot with the different columns, *
+*Answer: In coloring the plot with the different columns, we see that Total_Bsmt_SF, First_Flr_SF, Garage_Area tend to form gradients along PC1 as compared to Mo_Sold which is more diffuse is coloring. Since the features forming gradients for PC1 are related to size, PC1 is likely capturing size information. For PC2, Year_Built, Year_Remod_Add show gradients. This means PC2 is capturing information when construction was performed for a house.*
 
 
 The key idea is that **PC1 and PC2 each combine information from many of the original measurements**. We have turned a higher-dimensional feature space into a 2D view that tries to preserve the strongest patterns of variation.
