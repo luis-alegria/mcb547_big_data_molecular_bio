@@ -3,17 +3,19 @@
 title: "Understanding Dimensionality Reduction: Principal Component Analysis (PCA)"
 subtitle: ""
 author: "Luis Alegría"
-date: "2026-09-01"
+date: "`r Sys.Date()`"
 output: 
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
     theme: cosmo
     highlight: tango
 ---
-#Sys.Date()
 
 ## Formatting code for the knitted document
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -383,7 +385,7 @@ print(round(loadings, 3))
 
 **What do these loadings tell us about the relationships between the four measurements in the Iris dataset?**
 
-*Answer: The loadings, or values in the eigenvectors, in PC1 reveal that Sepal.Length, Petal.Length, and Petal.Width all covary in the dataset since they all are positive and Sepal.Width covaries in the opoosite direction to the first three. The loadings for PC2 reveal that Sepal.Width, loading value of -0.923,  contributes most to PC2 and has a weak relationship to the other variables as seem in the covariance matrix.*
+*Answer: The loadings, or values in the eigenvectors, in PC1 reveal that Sepal.Length, Petal.Length, and Petal.Width all co-vary in the dataset since they all are positive and Sepal.Width co-varies in the opposite direction to the first three. The loadings for PC2 reveal that Sepal.Width, loading value of -0.923, contributes most to PC2 and has a weak relationship to the other variables as seem in the covariance matrix.*
 
 **Step 5: Transform our data into PC-space**
 - Multiply scaled data by eigenvectors
@@ -459,7 +461,7 @@ p1 + p2
 
 **If PC1 from one method is the negative of PC1 from the other method, does that mean one calculation is wrong?**
 
-*Answer: One calculation is not necessarily wrong if its the negative of the other. If v is an eigenvector for PC1 then -v just flips axis and the structure of the data stays.* 
+*Answer: One calculation is not necessarily wrong if its the negative of the other. If v is an eigenvector for PC1 then -v just flips it and the structure of the data stays.* 
 
 Note: This is the syntax for retrieving loadings from the PC produced by the prcomp function
 ```{r}
@@ -568,7 +570,6 @@ biopsy_pca_labeled <- cbind(biopsy_pca$x, diagnosis)
 ggplot(biopsy_pca_labeled, aes(x = PC1, y = PC2, color = class)) +
   geom_point() +
   labs(title = "Wisconsin Breast Cancer biopsy Dataset in PC Space.")
-
 ```
 
 
@@ -596,7 +597,7 @@ ggplot(biopsy_pca_labeled, aes(x = PC1, y = PC2, color = class)) +
 
 **In 2–3 sentences, summarize what PCA revealed about this dataset that might otherwise be difficult to see. Which PCs appear to be useful for predicting diagnosis?**
 
-*Answer: PCA for this dataset reveals that no one feature is dominant in predicting a benign/malignant diagnosis for a patient and all contibuted equally to the separation seen in the plot. It appears that PC1 is useful in predicting diagnosis.*
+*Answer: PCA for this dataset reveals that PC1 has roughly equal loadings for all cell measurements and captures the majority of variation in the data set at about 65.6%. Additionally, this component mostly separates the samples into benign and malignant categories which would have been difficult to see in the original dataset. PC1 is useful in predicting diagnosis while PC2 was not as it was dominated by a single loading Mitoses.*
 
 
 
