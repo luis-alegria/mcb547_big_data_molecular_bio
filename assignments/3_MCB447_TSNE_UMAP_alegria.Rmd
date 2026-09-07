@@ -1,7 +1,7 @@
 ---
 title: "Beyond PCA: t-SNE and UMAP"
 subtitle: "What if variation follows a curved path?"
-author: "Your Name"
+author: "Luis Alegría"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -196,14 +196,14 @@ p_pca_swiss + p_tsne_swiss + p_umap_swiss +
 
 **Which method(s) unroll the Swiss roll most clearly?**
 
-*Answer:tSNE 1 and Umap*
+*Answer: Based on the plot above, t-SNE and UMAP unroll the Swiss roll most clearly. PCA produces a point cloud resembling a parallelogram.*
 
 
 ### Question 2
 
 **Which method do you think best reveals the continuous path through the Swiss roll? Explain your reasoning.**
 
-*Answer: t-sne more continuous *
+*Answer: T-SNE best reveals the continuous path of the Swiss roll. In this projection the points in the projection appear less disjointed when compared to the UMAP projection as here there is larger gaps between some of the point neighborhoods.*
 
 
 ### Parameter choices matter
@@ -249,14 +249,14 @@ ggplot(perplexity_data, aes(tSNE1, tSNE2, color = t)) +
 
 **How does changing the t-SNE perplexity from 15 to 60 change the resulting plot?**
 
-*Answer: 15 disjoint, 60 more continuous spread of points*
+*Answer: When perplexity is set to 15 for t_SNE, the plot for the map results in more space between point neighborhood. When the perplexity parameter is increased to 60 the plot results in point neighborhoods that appear tighter and more continuous when compared to the first plot. 15 disjoint, 60 more continuous spread of points*
 
 
 ### Question 4
 
 **Why do you think increasing perplexity has this effect on the t-SNE visualization?**
 
-*Answer: Local neighborhood increased in size?*
+*Answer: Since perplexity defines the scale of a local neighborhood, increasing its values results in the algorithm considering a larger neighborhood for points. *
 
 ---
 
