@@ -1,15 +1,18 @@
 ---
 title: "Beyond PCA: t-SNE and UMAP"
-subtitle: "What if variation follows a curved path?"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
     theme: cosmo
     highlight: tango
     code_folding: show
+subtitle: What if variation follows a curved path?
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +22,8 @@ knitr::opts_chunk$set(
   message = FALSE,
   fig.width = 10,
   fig.height = 8,
-  fig.align = "center"
+  fig.align = "center",
+  out.width = "50%"
 )
 
 # Install these packages before class if needed:
@@ -34,6 +38,7 @@ library(snedata)
 library(Rtsne)
 library(umap)
 library(viridis)
+library(scatterplot3d)
 ```
 
 ## Introduction
@@ -196,14 +201,14 @@ p_pca_swiss + p_tsne_swiss + p_umap_swiss +
 
 **Which method(s) unroll the Swiss roll most clearly?**
 
-*Answer: Based on the plot above, t-SNE and UMAP unroll the Swiss roll most clearly. PCA produces a point cloud resembling a parallelogram.*
+*Answer: Based on the plot above, t-SNE and UMAP unroll the Swiss roll most clearly as these methods produced curved plots and preserved point neighborhood structure. PCA produces a point cloud resembling a parallelogram.*
 
 
 ### Question 2
 
 **Which method do you think best reveals the continuous path through the Swiss roll? Explain your reasoning.**
 
-*Answer: T-SNE best reveals the continuous path of the Swiss roll. In this projection the points in the projection appear less disjointed when compared to the UMAP projection as here there is larger gaps between some of the point neighborhoods.*
+*Answer: T-SNE best reveals the continuous path of the Swiss roll. For this method, points from the original data set are placed in proximity to one another as indicated by the coloring. For UMAP, there is a subset of data point that should be closer to other point neighborhoods based on the coloring but produces fragments.*
 
 
 ### Parameter choices matter
@@ -249,14 +254,14 @@ ggplot(perplexity_data, aes(tSNE1, tSNE2, color = t)) +
 
 **How does changing the t-SNE perplexity from 15 to 60 change the resulting plot?**
 
-*Answer: When perplexity is set to 15 for t_SNE, the plot for the map results in more space between point neighborhood. When the perplexity parameter is increased to 60 the plot results in point neighborhoods that appear tighter and more continuous when compared to the first plot. 15 disjoint, 60 more continuous spread of points*
+*Answer: When perplexity is set to 15 for t-SNE, the plot for the mapping results in less continuous point neighborhoods. When the perplexity parameter is increased to 60, the plot results in point neighborhoods that appear tighter and more continuous when compared to the first plot.*
 
 
 ### Question 4
 
 **Why do you think increasing perplexity has this effect on the t-SNE visualization?**
 
-*Answer: Since perplexity defines the scale of a local neighborhood, increasing its values results in the algorithm considering a larger neighborhood for points. *
+*Answer: Since perplexity defines the scale of a local neighborhood, increasing its value results in the method considering a larger neighborhood for points and produces a more continuous spread of points with neighborhoods becoming more dense.*
 
 ---
 
@@ -309,21 +314,21 @@ The color records each point's original Z coordinate. We will carry it into ever
 
 **Looking at the original 3D mammoth, what features do you predict will be retained well by a straight two-dimensional projection such as PCA?**
 
-*Answer: Side profile of  but not features like ribs*
+*Answer: PCA will retain the features of limbs, tusks, and the side profile of the mammoth. This is due to the largest variation for the data points being found along axes of the side profile. It will not retain finer features such as the ribs.*
 
 
 ### Question 6
 
 **Which parts of the mammoth contain curved or branching structures that might be difficult to represent in two dimensions?**
 
-*Answer:Ribs, legs, tusks*
+*Answer: Parts of the mammoth that contain curved or branching structure difficult to represent in two dimensions are the tail, the limbs, the ribs, and the tusks.*
 
 
 ### Question 7
 
 **Do you expect a nonlinear method such as t-SNE or UMAP to produce a more recognizable mammoth than PCA? Why or why not?**
 
-*Answer: Yes, more flexibility*
+*Answer: Yes it is expected that nonlinear methods such as t-SNE or UMAP will produce a more recognizable mammoth. PCA works best for data sets with a linear structure. T-SNE and UMAP work best for data sets which have more complex or curved variation as they are offer more flexibility to capture non-linear variation. The mammoth data set contains variation that may not be accurately captured by PCA.*
 
 ### Run PCA, t-SNE, and UMAP
 
@@ -407,21 +412,21 @@ p_pca_mammoth + p_tsne_mammoth + p_umap_mammoth +
 
 **Which method best preserves the mammoth's overall shape?**
 
-*Answer: Umap yo*
+*Answer: Umap preserved best the mammoth's overall shape. For this method, the different parts of the skeleton are roughly in their original locations with the exception of one of the front limbs which appears in the point neighborhood for the tusks.*
 
 
 ### Question 9
 
 **What local relationships or structures become easier to see with t-SNE or UMAP compared with PCA?**
 
-*Answer: Bones, patterns of variation along curves*
+*Answer: Local relationships easier to see with t-SNE and UMAP compared to PCA are variation along curves and the skeleton ribs. Ribs are roughly visible in both plots. For the limbs, tusk, and tail we can see that these structures are curved in the plots.*
 
 
 ### Question 10
 
 **Which method, t-SNE or UMAP, better preserves the overall organization of the original mammoth—for example, keeping bones approximately connected to the body parts where they belong?**
 
-*Answer: Umap, single cell sequencing, DIMENSIONS NOT INTERPRETABLE YO!*
+*Answer: The UMAP method better preserves the overall organization of the mammoth. The hind limbs and tail are in the approximate position as in the original data. The ribs are in the middle of the plot. And Fore limbs and tusk are also connected to correct parts of the body. The only issue is that the end of one limb appear close to the tusks.*
 
 
 ---
@@ -432,5 +437,5 @@ p_pca_mammoth + p_tsne_mammoth + p_umap_mammoth +
 
 **In 3–5 sentences, explain why PCA may fail when important variation follows a curved path, how t-SNE or UMAP approaches this problem differently, and one reason to be cautious when interpreting distances, shapes, or clusters in a t-SNE or UMAP plot.**
 
-*Answer:Linear vs non-linear *
+*Answer: PCA may fail to to capture variation along a curved path as it is a linear method that changes the coordinate axes of the original. The methods of t-SNE and UMAP, instead of changing the coordinate axes, try to preserve the neighborhood structure of the original data when projecting it to a lower dimensional space. Since these non-linear methods do not produce new axes, they can not be interpreted with loadings or variance as in PCA. One should be cautious when interpreting distances, shapes, or cluster in plots for these methods.*
 
