@@ -1,0 +1,340 @@
+---
+title: "Exercise - K-means Clustering - Human Population Genetics"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+editor_options:
+  chunk_output_type: console
+---
+
+Load the packages and data. Install any missing packages
+
+Download `phased_HGDP+India+Africa_2810SNPs-regions1to36.csv` from D2L and place it in the same folder as this R Markdown file.
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(umap)
+
+df <- read_csv("phased_HGDP+India+Africa_2810SNPs-regions1to36.csv")
+```
+
+
+## Learning goals
+
+By the end of this exercise, you should be able to:
+
+- explain the utility of clustering;
+- run k-means clustering on a high-dimensional dataset;
+- interpret a cluster assignment and a cluster centroid;
+- examine how the choice of $K$ affects the results; and
+- compare data-driven clusters with known biological labels.
+
+## The dataset
+
+Today, we will work with data from the **Human Genome Diversity Project (HGDP)**. The dataset contains genotypes for 1,107 individuals from 63 populations around the world, measured at approximately 2,800 single-nucleotide polymorphisms (SNPs).
+
+
+
+SNPs are DNA positions in the genome where individuals vary. 
+For example,
+rs6696404 is the unique database identifier for one particular SNP:
+
+-  rs means Reference SNP
+- 6696404 is its identification number in NCBI dbSNP
+- It is an A/G variant on chromosome 1
+- Its genomic coordinate depends on the reference-genome version; on GRCh38 it is approximately chromosome 1 position 3,075,369.
+
+
+- Each **row** represents one individual.
+- Columns beginning with `rs` contain that individual's genotype at a SNP.
+- Columns such as `pop` and `region` contain known population information. We will not use these labels to create the clusters; we will use them afterward to help interpret the results.
+
+
+### Question 1
+
+**What is each observation (row) in this dataset? What are the features that we will use for clustering? Why don't we want to include `region` and `pop` as clustering features?**
+
+*Answer: Each observation in the HGDP is the set of SNPs for individual. The features used for clustering are any column beginning with rs as this represent the a person's SNP genotype at that position. Features region and pop are not used as these are categorical features and the clustering algorithm requires numerical features.*
+
+
+## Prepare the genotype data
+
+We first extract the SNP columns and standardize each SNP to have a mean of 0 and a standard deviation of 1. This puts the SNPs on comparable scales.
+
+After centering and scaling, a value of 0 represents the mean for a SNP. For this exercise, we therefore replace missing values with 0.
+
+```{r prepare-data}
+genotypes_scaled <- df %>%
+  select(starts_with("rs")) %>%
+  scale()
+
+genotypes_scaled[is.na(genotypes_scaled)] <- 0
+```
+
+The original dataset has approximately 2,800 genotype dimensions. We will first use PCA to make a smaller representation containing 20 principal components. This reduces noise and makes the clustering faster while retaining major patterns of genetic variation.
+
+This is not an essential step, however it will greatly speed up the clustering. 
+
+```{r run-pca}
+pca <- prcomp(genotypes_scaled, rank. = 20)
+pca_scores <- pca$x
+```
+
+**PCA and UMAP represent the observations in a new coordinate system. Clustering does something different: it assigns the observations to groups.**
+
+## Make a shared UMAP visualization
+
+We will make a two-dimensional UMAP so that we can visualize our later cluster assignments. We run UMAP on the 20 PCA scores rather than on all SNP columns.
+
+```{r run-umap, cache=TRUE}
+set.seed(123)
+
+
+umap_result <- umap(
+  pca_scores,
+  n_neighbors = 15,
+  min_dist = 0.1,
+  metric = "euclidean",
+  verbose = FALSE
+)
+
+umap_coordinates <- umap_result$layout
+
+df_plot <- df %>%
+  mutate(
+    UMAP1 = umap_coordinates[, 1],
+    UMAP2 = umap_coordinates[, 2]
+  ) %>%
+  select(-starts_with("rs")) 
+```
+
+Before clustering, plot the UMAP and color the observations by their known geographic region.
+
+```{r plot-region-umap}
+ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = region)) +
+  geom_point(alpha = 0.5, size = 1.5) +
+  labs(
+    title = "HGDP individuals",
+    subtitle = "UMAP colored by known geographic region",
+    color = "Region"
+  ) +
+  theme_minimal()
+```
+
+### Question 2
+
+**Describe two patterns that you see in the UMAP. Which regions appear relatively distinct, and which overlap?**
+
+*Answer: The UMAP method produces five distinct point neighborhoods and ... The regions that appear relatively distinct are Oceania, East Asia, Africa, and America. The ones that overlap appear to be Central South Asia, Middle East, and Europe.*
+
+
+UMAP is useful for visualizing local neighborhoods, but it changes the geometry of the data. Remember that distances and cluster sizes in a two-dimensional UMAP should therefore be interpreted cautiously.
+
+> **We will cluster the 20 PCA scores and then display the assignments on the UMAP. We will not use the two UMAP coordinates as the input to k-means.**
+
+## Run k-means clustering to discover clusters in an unsupervised way
+
+K-means begins with a number of clusters, $K$, chosen by the analyst. It then alternates between two steps:
+
+1. Assign each observation to its nearest cluster center (centroid).
+2. Recalculate each centroid as the mean position of the observations assigned to it.
+
+The process repeats until the assignments stop changing.
+
+Run k-means with $K=6$. `nstart = 25` tries 25 different random initial sets of centroids and keeps the solution with the smallest total within-cluster variation.
+
+```{r run-kmeans}
+set.seed(123)
+
+km6 <- kmeans(
+  pca_scores,
+  centers = 6,
+  nstart = 25
+)
+
+```
+
+
+
+### Question 3
+
+**Examine `km6$cluster`, `km6$centers`, and `km6$size`. What does each object contain? How many values or rows do you expect in each?**
+
+```{r inspect-kmeans}
+head(km6$cluster)
+km6$centers
+km6$size
+```
+
+*Answer: For the object km6, km6$cluster is a label for what cluster an observation belongs to, km6$centers is the coordinates for the cluster center, and km6$size is how many observations belong a cluster.*
+
+```{r}
+
+# add the cluster to the data so we can plot it
+# Find the component of km6 that will give you a column of cluster ids
+df_plot <- df_plot %>%
+  mutate(kmeans_cluster = factor(km6$cluster))
+```
+
+
+Now display the cluster assignments on the same UMAP.
+
+```{r plot-kmeans-umap}
+ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = kmeans_cluster)) +
+  geom_point(alpha = 0.75, size = 1.5) +
+  labs(
+    title = "K-means clustering of HGDP individuals",
+    subtitle = "K-means used 20 PCs; assignments are displayed on UMAP",
+    color = "K-means cluster"
+  ) +
+  theme_minimal()
+```
+
+### Question 4
+
+**Does each k-means cluster occupy a compact part of the UMAP? Identify one boundary or group of observations where the k-means assignments do not match what you would have drawn by eye.**
+
+*Answer: Yes it appears that eack k-means cluster occupies a compact part of UMAP. One boundary that does not match what could be drawn by eye is the boundary between clusters 1 and 5.*
+
+
+### Question 5
+
+**Why might clusters identified using PCA-transformed data not perfectly match the groups you see visually on the UMAP? Consider how PCA and UMAP represent the structure of the data.**
+
+*Answer: PCA creates new coordinates axes in the form of eigenvectors and rotates the data while the UMAP method attempts to maintain point neighborhood structure. Since these methods produce different results then clusters identified by PCA-transformed data may not match the groups seen in UMAP.*
+
+
+## Compare clusters with known regions
+
+K-means did not receive the `region` labels. We can now compare its data-driven assignments with those known labels.
+
+```{r cluster-region-table}
+cluster_region_counts <- df_plot %>%
+  count(kmeans_cluster, region) %>%
+  group_by(kmeans_cluster) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+cluster_region_counts
+```
+
+The following stacked bar plot shows the regional composition of each cluster.
+
+```{r cluster-region-bars}
+ggplot(
+  cluster_region_counts,
+  aes(x = kmeans_cluster, y = proportion, fill = region)
+) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    x = "K-means cluster",
+    y = "Individuals in cluster",
+    fill = "Region"
+  ) +
+  theme_minimal()
+```
+
+### Question 6
+
+**How well do the six clusters correspond to the known geographic regions? Give one example of a relatively homogeneous cluster and one example of a cluster that contains individuals from multiple regions.**
+
+*Answer: Of the six clusters, four correspond relatively well to known geographic regions (Oceanina, Africa, East Asia, and America) while for the two clusters, 1 and 5, are a mixture of regions. Cluster number 2, colored with label Oceania, appears to be homogeneous while cluster 5 is a mixture of from the Middle East, Europe, Central South Asia, and Africa.*
+
+
+### Question 7
+
+**If a k-means cluster contains several geographic regions, does that mean the algorithm failed? Explain why or why not.**
+
+*Answer: If a k-means cluster contains several geographic regions, it does not mean that the algorithm failed. *
+
+
+## How should we choose K?
+
+K-means requires us to select $K$ before fitting the model. One diagnostic is the **total within-cluster sum of squares**: the squared distances between observations and their assigned centroids. Lower values mean that observations are, on average, closer to their centroids.
+
+Calculate this value for $K=1$ through $K=12$.
+
+```{r elbow-calculation, cache=TRUE}
+set.seed(123)
+
+# Calculate for k=1 through k=12
+elbow_results <- tibble(K = 1:12) %>%
+  mutate(
+    total_within_ss = map_dbl(
+      K,
+      ~ kmeans(pca_scores, centers = .x, nstart = 25)$tot.withinss
+    )
+  )
+
+ggplot(elbow_results, aes(x = K, y = total_within_ss)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    title = "Elbow plot",
+    x = "Number of clusters (K)",
+    y = "Total within-cluster sum of squares"
+  ) +
+  theme_minimal()
+```
+
+Adding clusters will always reduce the total within-cluster sum of squares. We therefore look for an **elbow**: a point after which increasing $K$ gives progressively smaller improvements. The elbow is a guide, not an automatic or uniquely correct answer.
+
+### Question 8
+
+**Where do you see a possible elbow? Would you choose $K=6$ based on this plot alone? Explain your reasoning.**
+
+*Answer: A possible elbow is at 4. Visually, this is the value for which the total within-cluster sum of squares does not change much when compared to the next value of k=5. Based on the plot alone, I would not choose k=6. *
+
+
+## Explore a different value of K
+
+Choose one other value of $K$, rerun k-means, and display the new assignments on the UMAP. Replace `???` with your selected value.
+
+```{r choose-k}
+chosen_k <- ???
+
+set.seed(123)
+
+km_chosen <- kmeans(
+  pca_scores,
+  centers = chosen_k,
+  nstart = 25
+)
+
+df_plot <- df_plot %>%
+  mutate(chosen_cluster = factor(km_chosen$cluster))
+
+ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = chosen_cluster)) +
+  geom_point(alpha = 0.75, size = 1.5) +
+  labs(color = "Cluster") +
+  theme_minimal()
+```
+
+### Question 9
+
+**What changed when you changed $K$? Did the new solution split a previously coherent group, combine distinct groups, or reveal a useful level of structure? Use a specific region of the UMAP in your answer.**
+
+*Answer:*
+
+## Final Reflection
+
+###Question 10
+
+**Brainstorm a situation where clustering data could be useful. What would the observations and features be, and what might the resulting clusters reveal? (3 or 4 sentences) **
+
+*Answer:*
+
+
+
+## Take-home ideas
+
+- K-means assigns every observation to one of $K$ clusters.
+- The method defines a cluster as observations that are close to a shared centroid.
+- The analyst must choose $K$, and several values may be scientifically useful.
+- Known labels can help interpret clusters, but they were not used to construct them.
+- UMAP is a display here; the clustering was performed on the 20-dimensional PCA representation.
+
+In the next lesson, we will use **hierarchical clustering**. Instead of choosing $K$ first, we will build a tree of relationships and then decide where to cut it.
