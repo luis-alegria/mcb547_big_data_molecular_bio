@@ -1,6 +1,10 @@
 ---
 title: "Exercise - K-means Clustering - Human Population Genetics"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
@@ -55,7 +59,7 @@ rs6696404 is the unique database identifier for one particular SNP:
 
 **What is each observation (row) in this dataset? What are the features that we will use for clustering? Why don't we want to include `region` and `pop` as clustering features?**
 
-*Answer: Each observation in the HGDP is the set of SNPs for individual. The features used for clustering are any column beginning with rs as this represent the a person's SNP genotype at that position. Features region and pop are not used as these are categorical features and the clustering algorithm requires numerical features.*
+*Answer: Each observation, or row, in the HGDP represents an individual and contains SNP and population features. The features used for clustering are any column beginning with rs, as these represent a person's SNP genotype encoded by 0, 1, or 2. The region and pop features are not used because they are categorical, and the clustering algorithm requires numerical features to calculate distances.*
 
 
 ## Prepare the genotype data
@@ -126,7 +130,7 @@ ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = region)) +
 
 **Describe two patterns that you see in the UMAP. Which regions appear relatively distinct, and which overlap?**
 
-*Answer: The UMAP method produces five distinct point neighborhoods and ... The regions that appear relatively distinct are Oceania, East Asia, Africa, and America. The ones that overlap appear to be Central South Asia, Middle East, and Europe.*
+*Answer: The UMAP method produces five distinct local neighborhoods and of these neighborhoods, two appear fairly homogenous, two appear mostly homogenous, and one is heterogenous. The regions that appear relatively distinct are Oceania, East Asia, Africa, and America. The ones that overlap appear to be Central South Asia, Middle East, and Europe.*
 
 
 UMAP is useful for visualizing local neighborhoods, but it changes the geometry of the data. Remember that distances and cluster sizes in a two-dimensional UMAP should therefore be interpreted cautiously.
@@ -167,7 +171,7 @@ km6$centers
 km6$size
 ```
 
-*Answer: For the object km6, km6$cluster is a label for what cluster an observation belongs to, km6$centers is the coordinates for the cluster center, and km6$size is how many observations belong a cluster.*
+*Answer: For the object km6, km6\$cluster is a vector of length 1107 containing a cluster label, an integer, for each observation. For km6\$centers, this contains the coordinates (20) for each centroid or cluster center, so we expect six rows with 20 values. The object km6\$size contains six values for how many observations belong to a cluster*
 
 ```{r}
 
@@ -195,15 +199,13 @@ ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = kmeans_cluster)) +
 
 **Does each k-means cluster occupy a compact part of the UMAP? Identify one boundary or group of observations where the k-means assignments do not match what you would have drawn by eye.**
 
-*Answer: Yes it appears that eack k-means cluster occupies a compact part of UMAP. One boundary that does not match what could be drawn by eye is the boundary between clusters 1 and 5.*
-
+*Answer: In the visualization, four of the k-means clusters (2, 3, 4, and 6) occupy a compact region in UMAP space. For cluster 1 and 5, these do not appear to be compact as some points are in proximity to other clusters (4, and 6). One group of observations where the cluster assignment does not match what can be drawn by eye is those close to cluster 6 that are labeled as cluster 1 and 5. If drawing by eye, these should be included in cluster 6.*
 
 ### Question 5
 
 **Why might clusters identified using PCA-transformed data not perfectly match the groups you see visually on the UMAP? Consider how PCA and UMAP represent the structure of the data.**
 
-*Answer: PCA creates new coordinates axes in the form of eigenvectors and rotates the data while the UMAP method attempts to maintain point neighborhood structure. Since these methods produce different results then clusters identified by PCA-transformed data may not match the groups seen in UMAP.*
-
+*Answer: PCA finds eigenvectors, or axes, that capture linear variance in a data set. UMAP captures the neighborhood structure of a data set in higher dimensions when projecting it to fewer dimensions, and, unlike PCA, it is a non-linear method. Given these differences, clusters identified with PCA-transformed data may not match groups seen visually with UMAP.*
 
 ## Compare clusters with known regions
 
@@ -240,14 +242,13 @@ ggplot(
 
 **How well do the six clusters correspond to the known geographic regions? Give one example of a relatively homogeneous cluster and one example of a cluster that contains individuals from multiple regions.**
 
-*Answer: Of the six clusters, four correspond relatively well to known geographic regions (Oceanina, Africa, East Asia, and America) while for the two clusters, 1 and 5, are a mixture of regions. Cluster number 2, colored with label Oceania, appears to be homogeneous while cluster 5 is a mixture of from the Middle East, Europe, Central South Asia, and Africa.*
-
+*Answer: Of the six clusters, four correspond relatively well to known geographic regions (Oceania, Africa, East Asia, and America), while clusters 1 and 5 appear to be mixtures of regions. Cluster 2, labeled Oceania, appears homogeneous, while cluster 5 is a mixture of the Middle East, Europe, Central South Asia, and Africa.*
 
 ### Question 7
 
 **If a k-means cluster contains several geographic regions, does that mean the algorithm failed? Explain why or why not.**
 
-*Answer: If a k-means cluster contains several geographic regions, it does not mean that the algorithm failed. *
+*Answer: If a k-means cluster contains several geographic regions, it does not mean that the algorithm failed. For this data set, k-means groups individuals based on their genetic composition, with no weight given to geography. A given region may contain multiple genotypes due to migration. Additionally, the selection of k will influence which regions are lumped together. In this data set, since k=6 and regions=7, some groups will contain several geographic regions.*
 
 
 ## How should we choose K?
@@ -286,7 +287,7 @@ Adding clusters will always reduce the total within-cluster sum of squares. We t
 
 **Where do you see a possible elbow? Would you choose $K=6$ based on this plot alone? Explain your reasoning.**
 
-*Answer: A possible elbow is at 4. Visually, this is the value for which the total within-cluster sum of squares does not change much when compared to the next value of k=5. Based on the plot alone, I would not choose k=6. *
+*Answer: Visually, a possible elbow is at $k=4$. Based on the plot alone, I would not choose k=6, as this value is past the elbow, and going from k=4 to k=6 does not significantly improve the total within-cluster sum of squares, meaning the points are relatively stable around the centroids.*
 
 
 ## Explore a different value of K
@@ -294,7 +295,7 @@ Adding clusters will always reduce the total within-cluster sum of squares. We t
 Choose one other value of $K$, rerun k-means, and display the new assignments on the UMAP. Replace `???` with your selected value.
 
 ```{r choose-k}
-chosen_k <- ???
+chosen_k <- 7
 
 set.seed(123)
 
@@ -317,15 +318,15 @@ ggplot(df_plot, aes(x = UMAP1, y = UMAP2, color = chosen_cluster)) +
 
 **What changed when you changed $K$? Did the new solution split a previously coherent group, combine distinct groups, or reveal a useful level of structure? Use a specific region of the UMAP in your answer.**
 
-*Answer:*
+*Answer: Changing to $k=7$ split a previously coherent group in the bottom-left of the plot. In both the original UMAP plot (labeled by region) and the k-means plot, this group appears fairly homogeneous. As $k$ changes, this same group now appears to consist of two subpopulations.*
 
 ## Final Reflection
 
-###Question 10
+### Question 10
 
 **Brainstorm a situation where clustering data could be useful. What would the observations and features be, and what might the resulting clusters reveal? (3 or 4 sentences) **
 
-*Answer:*
+*Answer: Clustering may be useful for analyzing the bacterial microbiome composition in samples from different parts of corn plants (Zea mays). Observations would include sample type (e.g., rhizosphere, root, shoot, and leaf). Features are the relative abundance of bacterial taxa in each sample. Clustering may reveal whether different tissue types have similar bacterial microbiomes.*
 
 
 
