@@ -1,0 +1,426 @@
+---
+title: "Exercise - Hierarchical Clustering - Human Population Genetics"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+Today, we'll use **hierarchical clustering** to explore patterns of genetic similarity among human populations.
+
+Hierarchical clustering groups observations based on their similarity and represents those relationships as a tree, or **dendrogram**. Unlike k-means, we do not have to choose the number of clusters before building the tree. We can decide later where to cut the tree.
+
+First, load the packages and data set.
+
+**Package note:** `ggtree` and `ggtreeDendro` are Bioconductor packages. If you do not already have them installed, run the following commands once in the R console:
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install(c("ggtree", "ggtreeDendro"))
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggtree)
+library(ggtreeDendro)
+
+df <- read_csv("phased_HGDP+India+Africa_2810SNPs-regions1to36.csv")
+```
+
+## Problem 1: From pairwise distances to a dendrogram
+
+Our full data set contains more than 1,000 individuals. A dendrogram containing that many samples can be difficult to interpret.
+
+To start, we'll work with **one individual from each population**.
+
+Here, `distinct()` selects the first individual from each `pop`. The `.keep_all = TRUE` argument keeps all of the other columns for that individual.
+
+```{r one-per-population}
+oneper <- df %>%
+  distinct(pop, .keep_all = TRUE)
+```
+
+As with our PCA, t-SNE, and UMAP analyses, we'll pull out the genotype columns, scale them, and replace any `NaN` values with 0.
+
+```{r scale-one-per-population}
+scaled_oneper <- oneper %>%
+  select(starts_with("rs")) %>%
+  scale()
+
+scaled_oneper[is.na(scaled_oneper)] <- 0
+```
+
+We'll use the population names as the row labels.
+
+```{r label-one-per-population}
+rownames(scaled_oneper) <- oneper$pop
+```
+
+Next, calculate the pairwise distances between individuals.
+
+```{r distances-one-per-population}
+dists_oneper <- dist(scaled_oneper)
+```
+
+`dist()` calculates the distance between every pair of observations. Smaller values mean two individuals are more similar in this SNP data set.
+
+We can visualize the resulting distance matrix as a heatmap.
+
+```{r distance-heatmap, fig.width=9, fig.height=8}
+dist_df <- as.matrix(dists_oneper) %>%
+  as.data.frame() %>%
+  rownames_to_column("pop1") %>%
+  pivot_longer(
+    -pop1,
+    names_to = "pop2",
+    values_to = "distance"
+  )
+
+ggplot(dist_df, aes(x = pop1, y = pop2, fill = distance)) +
+  geom_tile() +
+  coord_equal() +
+  scale_fill_viridis_c() +
+  labs(
+    title = "Pairwise genetic distances",
+    subtitle = "Darker values indicate smaller distances",
+    x = NULL,
+    y = NULL,
+    fill = "Distance"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 6)
+  )
+```
+
+### Question 1
+
+**What does one square in this heatmap represent? Why is the diagonal made up of the smallest possible distance values?**
+
+*Answer: One square in the heatmap represent a color-coded SNP distance or SNP difference between individuals. The diagonal is the smallest SNP distance value (0) since it comparing individuals to themselves.*
+
+
+Now we can use these distances to perform hierarchical clustering.
+
+The `method = "average"` argument specifies **average-linkage clustering**. When comparing two clusters, R calculates the average distance between their members.
+
+```{r hierarchical-one-per-population}
+hc_oneper <- hclust(dists_oneper, method = "average")
+```
+
+To help interpret the tree, we'll create a small data frame connecting each population to its geographic region.
+
+```{r one-per-population-info}
+oneper_info <- oneper %>%
+  transmute(
+    label = pop,
+    population = pop,
+    region = region
+  )
+```
+
+Now plot the dendrogram and color the population labels by region.
+
+```{r plot-one-per-population-tree, fig.width=9, fig.height=8}
+autoplot(hc_oneper) %<+%
+  oneper_info +
+  geom_tiplab(
+    aes(label = population, color = region),
+    size = 3
+  )
+```
+
+### Reorder the distance heatmap using the tree
+
+The dendrogram gives us an ordering of the populations. We can use that ordering to rearrange the rows and columns of the distance heatmap.
+
+**Importantly, none of the distance values change. We are only changing their order.**
+
+```{r clustered-distance-heatmap, fig.width=9, fig.height=8}
+pop_order <- hc_oneper$labels[hc_oneper$order]
+
+dist_df_ordered <- dist_df %>%
+  mutate(
+    pop1 = factor(pop1, levels = pop_order),
+    pop2 = factor(pop2, levels = rev(pop_order))
+  )
+
+ggplot(dist_df_ordered, aes(x = pop1, y = pop2, fill = distance)) +
+  geom_tile() +
+  coord_equal() +
+  scale_fill_viridis_c() +
+  labs(
+    title = "Pairwise genetic distances",
+    subtitle = "Populations reordered using hierarchical clustering",
+    x = NULL,
+    y = NULL,
+    fill = "Distance"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 6)
+  )
+```
+
+### Question 2
+
+**Compare the original and reordered heatmaps. Did hierarchical clustering change any of the pairwise distances? What becomes easier to see after the populations are reordered? Identify one group of populations that forms a block of relatively small distances.**
+
+*Answer: Hierarchical clustering did not change any of the pairwise distances. It merely changing the order. After the reordering it becomes easier to see which pairs of individuals are more closely related (smaller SNP distance) and which are more distantly related (larger SNP distance).*
+
+
+## Problem 2: Reading a dendrogram
+
+A dendrogram summarizes the pairwise relationships in the distance matrix.
+
+When reading the tree, don't just look at which labels appear next to each other. Instead, look at **where their branches first join**.
+
+### Question 3
+
+**From your dendrogram, is the Yi individual genetically more similar to the Lahu individual or to the Tujia individual? How can you tell from the structure of the tree?**
+
+*Answer: From the dendogram, the individual Yi is more genetically similar to Tujia than to Lahu. On a similar branch?*
+
+
+## Problem 3: Hierarchical clustering of the full data set
+
+So far, we have represented each population using only one individual. We will now repeat the analysis using **every individual in the data set**.
+
+In the previous k-means exercise, we first reduced the genotype data to 20 principal components. We will use the same 20-dimensional representation here. This makes the calculation faster and allows us to compare hierarchical clustering and k-means using the same input data.
+
+```{r prepare-full-data}
+genotypes_scaled <- df %>%
+  select(starts_with("rs")) %>%
+  scale()
+
+genotypes_scaled[is.na(genotypes_scaled)] <- 0
+
+pca <- prcomp(genotypes_scaled, rank. = 20)
+pca_scores <- pca$x
+
+df_full <- df %>%
+  mutate(sample_id = paste0("sample_", row_number()))
+
+rownames(pca_scores) <- df_full$sample_id
+```
+
+Now calculate the distances between individuals and perform average-linkage hierarchical clustering on the pca scores
+
+```{r full-hierarchical-clustering}
+dists_all <- dist(pca_scores)
+
+hc_all <- hclust(
+  dists_all,
+  method = "average"
+)
+```
+
+Because there are more than 1,000 individuals, text labels would be difficult to read. Instead, we'll use colored points at the tips of the tree.
+
+First, create a data frame connecting each sample label to its geographic region.
+
+```{r full-tree-info}
+all_info <- df_full %>%
+  transmute(
+    label = sample_id,
+    region = region
+  )
+```
+
+Now plot the full dendrogram and color the tips by region.
+
+```{r plot-full-tree, fig.width=10, fig.height=8}
+autoplot(hc_all) %<+%
+  all_info +
+  geom_tippoint(
+    aes(color = region),
+    size = 1
+  )
+```
+
+### Question 4
+
+**Qualitatively, how does the full-data clustering compare with the tree containing only one individual per population? Do individuals from the same geographic regions tend to occur in the same parts of the tree? Identify one region that forms a relatively distinct group and one place where regions overlap.**
+
+*Answer: Qualitatively, the full-data clustering maintains roughly the same tree structure a the one from one individual per population. The one-per-population tree appear to have two major branches with one having five major sub-branches. The full-data tree has two major branches with one having four sub-branches. Individuals from the same geographic regions tend to occur on the same part of the tree according to the coloring. A region that forms a relatively distinct group is East Asia, while regions Central South Asia, Middle East, and Europe overlap.*
+
+
+## Problem 4: Cut the tree into clusters
+
+One major difference between k-means and hierarchical clustering is **when we choose the number of clusters**.
+
+With k-means, we chose \(K = 6\) before running the algorithm. Hierarchical clustering instead builds the full tree first. We can then decide where to cut the tree.
+
+To compare directly with our previous k-means analysis, cut the hierarchical tree into **six clusters**.
+
+```{r cut-tree}
+hc_clusters <- cutree(
+  hc_all,
+  k = ???
+)
+
+df_hc <- df_full %>%
+  mutate(hc_cluster = factor(hc_clusters))
+```
+
+Now calculate the regional composition of each hierarchical cluster.
+
+```{r hierarchical-cluster-region-table}
+hc_region_counts <- df_hc %>%
+  count(hc_cluster, region) %>%
+  group_by(hc_cluster) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+hc_region_counts
+```
+
+Plot the composition of each cluster as a stacked bar plot.
+
+```{r hierarchical-cluster-region-bars}
+ggplot(
+  hc_region_counts,
+  aes(x = hc_cluster, y = proportion, fill = region)
+) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Hierarchical clustering",
+    subtitle = "Tree cut into six clusters",
+    x = "Hierarchical cluster",
+    y = "Individuals in cluster",
+    fill = "Region"
+  ) +
+  theme_minimal()
+```
+
+For reference, below is the equivalent six-cluster **k-means** result from the previous exercise. Both methods are being applied to the same 20 PCA scores.
+
+```{r kmeans-reference, echo=FALSE}
+set.seed(123)
+
+km6 <- kmeans(
+  pca_scores,
+  centers = 6,
+  nstart = 25
+)
+
+df_kmeans <- df_full %>%
+  mutate(kmeans_cluster = factor(km6$cluster))
+
+kmeans_region_counts <- df_kmeans %>%
+  count(kmeans_cluster, region) %>%
+  group_by(kmeans_cluster) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+ggplot(
+  kmeans_region_counts,
+  aes(x = kmeans_cluster, y = proportion, fill = region)
+) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "K-means clustering",
+    subtitle = "K = 6",
+    x = "K-means cluster",
+    y = "Individuals in cluster",
+    fill = "Region"
+  ) +
+  theme_minimal()
+```
+
+> **Note:** Cluster numbers are arbitrary. For example, hierarchical cluster 1 does not need to correspond to k-means cluster 1. Compare the **composition** of the clusters rather than their numbers.
+
+### Question 5
+
+**Compare the six hierarchical clusters with the six k-means clusters. Do the two methods recover similar broad geographic groups? Give one example where they produce similar groups and one example where they differ.**
+
+*Answer:*
+
+
+## Problem 5: Focus on African populations
+
+The full tree shows broad relationships across geographic regions. We can also focus on a smaller subset of the data to examine finer-scale structure.
+
+Filter the original data to include only individuals from African populations.
+
+```{r filter-africa}
+africa <- df %>%
+  filter(region == ???) %>%
+  mutate(sample_id = paste0("sample_", row_number()))
+```
+
+For this smaller subset, use the scaled SNP data directly, as we did for the one-individual-per-population analysis.
+
+```{r prepare-africa}
+scaled_africa <- africa %>%
+  select(starts_with("rs")) %>%
+  scale()
+
+scaled_africa[is.na(scaled_africa)] <- 0
+
+rownames(scaled_africa) <- africa$sample_id
+```
+
+Now calculate the distances and build the tree.
+
+```{r cluster-africa}
+dists_africa <- dist(???)
+
+hc_africa <- hclust(
+  ???,
+  method = "average"
+)
+```
+
+Create a data frame connecting each individual to their population.
+
+```{r africa-tree-info}
+africa_info <- africa %>%
+  transmute(
+    label = sample_id,
+    population = pop
+  )
+```
+
+Plot the dendrogram and color the tips by population.
+
+```{r plot-africa-tree, fig.width=10, fig.height=10}
+autoplot(hc_africa) %<+%
+  africa_info +
+  geom_tippoint(
+    aes(color = ???),
+    size = 1.5
+  )
+```
+
+### Question 6
+
+**For which populations do all, or nearly all, of the sampled individuals cluster together? Which populations appear more genetically heterogeneous or overlap with other populations?**
+
+*Answer:*
+
+
+You may find the tree easier to examine if you enlarge the plot or save it as a PDF and zoom in.
+
+## Final reflection Question 7
+**In 3–5 sentences, explain one important difference between k-means and hierarchical clustering. Then describe a situation where hierarchical clustering might be more useful than k-means, and explain what the tree could reveal that a fixed set of clusters might not.**
+
+*Answer*
+
+
+## Take-home ideas
+
+- Hierarchical clustering begins with pairwise distances between observations.
+- The dendrogram summarizes how observations and groups of observations join together.
+- Reordering a distance heatmap using the dendrogram can reveal blocks of similar observations.
+- Unlike k-means, hierarchical clustering does not require choosing the number of clusters before building the tree.
+- A hierarchical tree can be cut afterward to produce a specific number of clusters.
+- Different clustering methods can produce similar broad patterns while disagreeing about some observations or boundaries.
