@@ -3,10 +3,12 @@ title: "Exercise - Hierarchical Clustering - Human Population Genetics"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -418,7 +420,7 @@ You may find the tree easier to examine if you enlarge the plot or save it as a 
 ## Final reflection Question 7
 **In 3–5 sentences, explain one important difference between k-means and hierarchical clustering. Then describe a situation where hierarchical clustering might be more useful than k-means, and explain what the tree could reveal that a fixed set of clusters might not.**
 
-*Answer*
+*Answer: One important difference between k-means and hierarchical clustering is that, for k-means, you must specify the number of clusters before running the algorithm. In contrast, with hierarchical clustering, you can choose it afterward. Hierarchical clustering may be better than k-means when analyzing a dataset that captures evolutionary information among members of a population. In this situation, a tree could reveal subpopulations within a cluster that k-means may not capture with a fixed number of clusters.*
 
 
 ## Take-home ideas
