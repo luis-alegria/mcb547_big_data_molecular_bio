@@ -129,12 +129,14 @@ oneper_info <- oneper %>%
 Now plot the dendrogram and color the population labels by region.
 
 ```{r plot-one-per-population-tree, fig.width=9, fig.height=8}
-autoplot(hc_oneper) %<+%
+autoplot(hc_oneper, layout = "rectangular") %<+%
   oneper_info +
   geom_tiplab(
     aes(label = population, color = region),
     size = 3
-  )
+  ) +
+  hexpand(0.3) +
+  theme(legend.position = "right")
 ```
 
 ### Reorder the distance heatmap using the tree
@@ -174,8 +176,7 @@ ggplot(dist_df_ordered, aes(x = pop1, y = pop2, fill = distance)) +
 
 **Compare the original and reordered heatmaps. Did hierarchical clustering change any of the pairwise distances? What becomes easier to see after the populations are reordered? Identify one group of populations that forms a block of relatively small distances.**
 
-*Answer: Hierarchical clustering did not change any of the pairwise distances. It merely changing the order. After the reordering it becomes easier to see which pairs of individuals are more closely related (smaller SNP distance) and which are more distantly related (larger SNP distance).*
-
+*Answer: Hierarchical clustering did not change any of the pairwise distances. It merely changes the order. After the reordering, it becomes easier to see which pairs of individuals are more closely related (smaller SNP distance) and which are more distantly related (larger SNP distance). A group of populations forming a block of relatively small distances is Daur, Dai, Mongolia, Miao, and Tujia.*
 
 ## Problem 2: Reading a dendrogram
 
@@ -187,7 +188,7 @@ When reading the tree, don't just look at which labels appear next to each other
 
 **From your dendrogram, is the Yi individual genetically more similar to the Lahu individual or to the Tujia individual? How can you tell from the structure of the tree?**
 
-*Answer: From the dendogram, the individual Yi is more genetically similar to Tujia than to Lahu. On a similar branch?*
+*Answer: From the dendrogram, the Yi individual is more genetically similar to the Tujia individual than to the Lahu individual. The branches for the Yi and Tujia individuals come from the same node. In contrast, the Yi and Lahu branches split at a node higher up the tree.*
 
 
 ## Problem 3: Hierarchical clustering of the full data set
@@ -238,7 +239,7 @@ all_info <- df_full %>%
 Now plot the full dendrogram and color the tips by region.
 
 ```{r plot-full-tree, fig.width=10, fig.height=8}
-autoplot(hc_all) %<+%
+autoplot(hc_all, layout = "rectangular") %<+%
   all_info +
   geom_tippoint(
     aes(color = region),
@@ -250,7 +251,7 @@ autoplot(hc_all) %<+%
 
 **Qualitatively, how does the full-data clustering compare with the tree containing only one individual per population? Do individuals from the same geographic regions tend to occur in the same parts of the tree? Identify one region that forms a relatively distinct group and one place where regions overlap.**
 
-*Answer: Qualitatively, the full-data clustering maintains roughly the same tree structure a the one from one individual per population. The one-per-population tree appear to have two major branches with one having five major sub-branches. The full-data tree has two major branches with one having four sub-branches. Individuals from the same geographic regions tend to occur on the same part of the tree according to the coloring. A region that forms a relatively distinct group is East Asia, while regions Central South Asia, Middle East, and Europe overlap.*
+*Answer: Qualitatively, the full-data clustering maintains roughly the same tree structure as the one-per-population clustering. The one-per-population tree appears to have two major branches, with one having five major sub-branches. The full-data tree has two major branches, with one having four sub-branches. The full data set includes a potential outlier, an individual from the Middle East. Individuals from the same geographic regions tend to occur on the same part of the tree for some regions (Oceania, East Asia, America, and Africa). East Asia forms a relatively distinct group, while Central South Asia, the Middle East, and Europe overlap.*
 
 
 ## Problem 4: Cut the tree into clusters
@@ -264,7 +265,7 @@ To compare directly with our previous k-means analysis, cut the hierarchical tre
 ```{r cut-tree}
 hc_clusters <- cutree(
   hc_all,
-  k = ???
+  k = 6
 )
 
 df_hc <- df_full %>%
@@ -344,7 +345,7 @@ ggplot(
 
 **Compare the six hierarchical clusters with the six k-means clusters. Do the two methods recover similar broad geographic groups? Give one example where they produce similar groups and one example where they differ.**
 
-*Answer:*
+*Answer:  When comparing hierarchical clustering and k-means, hierarchical clustering produces more clusters that are more homogeneous: four in k-means and 5 in hierarchical. Both methods recover similar broad geographic groups such as Oceania, America, East Asia, and Africa. Hierarchical clustering also produces a cluster for the Middle East that k-means does not.*
 
 
 ## Problem 5: Focus on African populations
@@ -355,7 +356,7 @@ Filter the original data to include only individuals from African populations.
 
 ```{r filter-africa}
 africa <- df %>%
-  filter(region == ???) %>%
+  filter(region == "AFRICA") %>%
   mutate(sample_id = paste0("sample_", row_number()))
 ```
 
@@ -374,10 +375,10 @@ rownames(scaled_africa) <- africa$sample_id
 Now calculate the distances and build the tree.
 
 ```{r cluster-africa}
-dists_africa <- dist(???)
+dists_africa <- dist(scaled_africa)
 
 hc_africa <- hclust(
-  ???,
+  dists_africa,
   method = "average"
 )
 ```
@@ -395,19 +396,21 @@ africa_info <- africa %>%
 Plot the dendrogram and color the tips by population.
 
 ```{r plot-africa-tree, fig.width=10, fig.height=10}
-autoplot(hc_africa) %<+%
+library(khroma)
+autoplot(hc_africa, layout = "rectangular") %<+%
   africa_info +
   geom_tippoint(
-    aes(color = ???),
+    aes(color = population),
     size = 1.5
-  )
+  ) +
+  scale_colour_discreterainbow()
 ```
 
 ### Question 6
 
 **For which populations do all, or nearly all, of the sampled individuals cluster together? Which populations appear more genetically heterogeneous or overlap with other populations?**
 
-*Answer:*
+*Answer: For the San, Mbuti Pygmy, Biaka Pygmy, and Hadza populations, the sampled individuals all or nearly all cluster together. The Mada, Mandenka, and Yoruba populations appear more genetically heterogeneous, as their branches overlap.*
 
 
 You may find the tree easier to examine if you enlarge the plot or save it as a PDF and zoom in.
