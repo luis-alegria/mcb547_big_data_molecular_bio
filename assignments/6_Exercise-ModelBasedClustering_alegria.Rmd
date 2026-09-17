@@ -59,7 +59,7 @@ out$BIC
 
 ***What is best model and number of clusters, based on BIC? What is the second best model and number of clusters? How much do they differ in BIC?***
 
-*According to BIC, the best model is VEV with two clusters. The second best model is *
+*According to BIC, the best model is VEV (ellipsoidal, equal shape) with two clusters and a $BIC=-561.7285$. The second best models is VEV (ellipsoidal, equal shape). with three clusters and $BIC=-562.5522$. The difference in BIC between the two models is small at $-561.7285 + 562.5522 = 0.8237$.*
 
 ## Problem 1.b
 
@@ -76,6 +76,8 @@ ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 
 ***How well does this clustering reflect the known biology of these three species?***
 
+*The clustering does not reflect the known biology of the three species well as versicolor and virginica are placed in the same cluster but are different species.*
+
 ## Problem 1.c
 
 Now let's force `Mclust` to only try 3 clusters, since we know we have three species.
@@ -85,10 +87,17 @@ out3 <- Mclust(iris[,1:4], G=3)
 
 Now plot the classification results as before.
 ```{r}
+plot(out3,"classification")
+```
 
+```{r}
+iris$cluster <- as.factor(out3$classification)
+ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 ```
 
 ***How well does this clustering reflect the known biology of our sample?***
+
+*Clustering with using 3 clusters does  reflect the biology of the species as using this number of clusters places each species into its own cluster.*
 
 Recall that mixture modeling gives us an uncertainty estimate for the clustering of each data point. We can visualize that easily in this plot, where the size of each point corresponds to the uncertainty of its classification.
 ```{r eval=F}
@@ -96,6 +105,8 @@ plot(out3, "uncertainty")
 ```
 
 ***Where do the flowers with the largest uncertainty lie in our data space?***
+
+**
 
 ## Problem 1.d
 
@@ -143,6 +154,8 @@ Make a bar chart of the classification, where we divide individuals by region an
 ```
 
 ***How does this clustering compare with our previous results using hierarchical clustering?***
+
+**
 
 ### Problem 2.b
 Something interesting is happening with the African individuals. To see more, filter your data frame `df` to keep only the African individuals, then make a bar plot where individuals are separated by population (`pop` column in data frame) and fill colored by cluster.
