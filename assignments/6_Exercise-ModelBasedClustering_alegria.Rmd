@@ -1,0 +1,154 @@
+---
+title: "Exercise - Gaussian Mixture Modeling"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+To perform our mixture modeling, we'll be working with the `mclust` package. It's very powerful, with a simple interface and nice plots. Let's get it installed.
+```{r message=FALSE}
+if (!requireNamespace("mclust", quietly = TRUE))
+  install.packages("mclust")
+library(mclust)
+```
+
+---
+
+### Problem 1
+
+To gain experience with the mixture models, we'll first work with a classic machine learning data set that is included with R. These data consist of 4 measurements from 50 flowers from each of 3 species of iris.
+![](iris-machinelearning.png)
+```{r}
+data(iris)
+```
+
+These data are small enough that we can view them as a spreadsheet.
+```{r eval=FALSE}
+View(iris)
+```
+
+Since our data are not very high dimension (only 4), we can visualize them fairly easily. The `GGally` package gives us a nice simple function for doing this through `ggplot2`.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+if (!requireNamespace("GGally", quietly = TRUE))
+  install.packages("GGally")
+library(GGally)
+```
+
+Now we make the plot. The lower triangle contains the pairwise relationships between each variable. The diagonal is the marginal distribution of each variable. And the upper triangle is the correlations between variables.
+```{r fig.show="hide"}
+ggpairs(iris, columns=1:4, aes(color=Species))
+```
+
+## Problem 1.a
+
+To cluster on the first 4 columns of the `iris` data frame, use the following command. Here `G=2:5` indicates that `Mclust` will try models of 2 to 5 clusters.
+```{r}
+out <- Mclust(iris[,1:4], G=2:5)
+```
+
+`Mclust` ranks models by the Bayesian Information Criterion (BIC). You can see details of the models tested and the corresponding BICs here. For explanations of the different model types, see `help(mclustModelNames)`.
+```{r eval=FALSE}
+out$BIC
+```
+
+***What is best model and number of clusters, based on BIC? What is the second best model and number of clusters? How much do they differ in BIC?***
+
+*According to BIC, the best model is VEV with two clusters. The second best model is *
+
+## Problem 1.b
+
+Let's plot the results of our clustering in two different ways. First, showing the data points.
+```{r fig.show="hide"}
+plot(out,"classification")
+```
+
+Second, as a bar chart breaking down the known species.
+```{r fig.show="hide"}
+iris$cluster <- as.factor(out$classification)
+ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
+```
+
+***How well does this clustering reflect the known biology of these three species?***
+
+## Problem 1.c
+
+Now let's force `Mclust` to only try 3 clusters, since we know we have three species.
+```{r}
+out3 <- Mclust(iris[,1:4], G=3)
+```
+
+Now plot the classification results as before.
+```{r}
+
+```
+
+***How well does this clustering reflect the known biology of our sample?***
+
+Recall that mixture modeling gives us an uncertainty estimate for the clustering of each data point. We can visualize that easily in this plot, where the size of each point corresponds to the uncertainty of its classification.
+```{r eval=F}
+plot(out3, "uncertainty")
+```
+
+***Where do the flowers with the largest uncertainty lie in our data space?***
+
+## Problem 1.d
+
+To see why `Mclust` selected what is seemingly a suboptimal number of clusters, let's compare the BIC and AIC of our various models. Recall that $BIC = 2 \log(L) - p \log(n)$ and $AIC = 2 \log(L) - 2p$, where $n$ is the number of data points, $p$ is the number of model parameters, and $\log(L)$ is the log-likelihood of the data given the model.
+
+From the `Mclust` output `out`, you can access these quantities as $n$ = `out$n`, $p$ = `out$df` (for "degrees of freedom"), and $\log(L)$ = `out$loglik`.
+```{r}
+
+```
+***Using R, calculate the BIC for the best two-cluster model and the best three-cluster model. What values did you get?***
+Check those values against the `Mclust` output. You should get identical results.
+***Using R, calculate the AIC for the best two-cluster model and the best three-cluster model. What values did you get?***
+
+***Which model is better according to BIC? Which model is better according to AIC? Explain why in your own words.***
+Recall from yesterday's lecture that BIC tends to err on the side of models that are too small, while AIC tends to err on the side of models that are too big.
+
+### Whiteboard problem
+
+Let's say someone defined a new (pretend) information criterion $XIC = 2 \log(L) - 3p$. For large datasets, would this lead to more or less complex models as compared to the BIC and AIC? Draw a graph similar to what we did in lecture to explain.
+
+```{r, eval=F, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("YourFigure.jpg")
+```
+
+### Problem 2
+
+Now let's try Gaussian Mixture Model on our population genetics data.
+As before, let's load the data and rescale it.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+df = read_csv("phased_HGDP+India+Africa_2810SNPs-regions1to36.csv")
+scaled <- df %>% dplyr::select(starts_with("rs")) %>% scale()
+scaled[is.na(scaled)] <- 0
+```
+
+And run our clustering. This will be slow, since we have a lot of data, and we're trying a lot of different models.
+```{r cache=TRUE}
+out <- Mclust(scaled, G=2:9)
+```
+
+### Problem 2.a
+Make a bar chart of the classification, where we divide individuals by region and fill color them by which cluster they are in.
+```{r}
+
+```
+
+***How does this clustering compare with our previous results using hierarchical clustering?***
+
+### Problem 2.b
+Something interesting is happening with the African individuals. To see more, filter your data frame `df` to keep only the African individuals, then make a bar plot where individuals are separated by population (`pop` column in data frame) and fill colored by cluster.
+```{r}
+```
+
+***Cluster 7 contains almost all individuals from which populations?***
+
+(If you recall from our hierarchical clustering exercise, these three populations are all hunter-gatherers. Pretty impressive that the Gaussian Mixture Model picks them out so well!)
