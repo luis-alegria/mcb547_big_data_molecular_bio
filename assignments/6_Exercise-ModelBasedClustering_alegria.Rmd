@@ -2,8 +2,10 @@
 title: "Exercise - Gaussian Mixture Modeling"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -22,8 +24,8 @@ library(mclust)
 
 ### Problem 1
 
-To gain experience with the mixture models, we'll first work with a classic machine learning data set that is included with R. These data consist of 4 measurements from 50 flowers from each of 3 species of iris.
-![](iris-machinelearning.png)
+To gain experience with the mixture models, we'll first work with a classic machine learning data set that is included with R. These data consist of 4 measurements from 50 flowers from each of 3 species of iris.)
+<!-- ![](iris-machinelearning.png) -->
 ```{r}
 data(iris)
 ```
@@ -106,7 +108,7 @@ plot(out3, "uncertainty")
 
 ***Where do the flowers with the largest uncertainty lie in our data space?***
 
-**
+*Flowers with the largest uncertainty tend to lie in the areas where there is intersection between versicolor and virginica samples. In these areas, the size of the points or uncertainty in classification tend to be larger.*
 
 ## Problem 1.d
 
@@ -114,6 +116,11 @@ To see why `Mclust` selected what is seemingly a suboptimal number of clusters, 
 
 From the `Mclust` output `out`, you can access these quantities as $n$ = `out$n`, $p$ = `out$df` (for "degrees of freedom"), and $\log(L)$ = `out$loglik`.
 ```{r}
+out$n
+
+out$df
+
+out$loglik
 
 ```
 ***Using R, calculate the BIC for the best two-cluster model and the best three-cluster model. What values did you get?***
@@ -128,7 +135,7 @@ Recall from yesterday's lecture that BIC tends to err on the side of models that
 Let's say someone defined a new (pretend) information criterion $XIC = 2 \log(L) - 3p$. For large datasets, would this lead to more or less complex models as compared to the BIC and AIC? Draw a graph similar to what we did in lecture to explain.
 
 ```{r, eval=F, echo = FALSE, out.width = "600px"}
-knitr::include_graphics("YourFigure.jpg")
+# knitr::include_graphics("YourFigure.jpg")
 ```
 
 ### Problem 2
