@@ -61,7 +61,7 @@ out$BIC
 
 ***What is best model and number of clusters, based on BIC? What is the second best model and number of clusters? How much do they differ in BIC?***
 
-*According to BIC, the best model is VEV (ellipsoidal, equal shape) with two clusters and a $BIC=-561.7285$. The second best models is VEV (ellipsoidal, equal shape). with three clusters and $BIC=-562.5522$. The difference in BIC between the two models is small at $-561.7285 + 562.5522 = 0.8237$.*
+*According to BIC, the best model is VEV (ellipsoidal, equal shape) with two clusters and a $BIC=-561.7285$. The second best models is VEV (ellipsoidal, equal shape). with three clusters and $BIC=-562.5522$. The difference in BIC between the two models is small at $-561.7285 - (-562.5522) = 0.8237$.*
 
 ## Problem 1.b
 
@@ -99,7 +99,7 @@ ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 
 ***How well does this clustering reflect the known biology of our sample?***
 
-*Clustering with using 3 clusters does  reflect the biology of the species as using this number of clusters places each species into its own cluster.*
+*Clustering with using 3 clusters reflect the biology of the species well as using this number of clusters places each setosa and versicolor into one cluster with virginica mostly in its own cluster wtih some of the samples being placed in the versicolor cluster.*
 
 Recall that mixture modeling gives us an uncertainty estimate for the clustering of each data point. We can visualize that easily in this plot, where the size of each point corresponds to the uncertainty of its classification.
 ```{r eval=F}
@@ -121,38 +121,36 @@ bay_info_crit <- function(L, p, n) {
   return(calc)
 }
 
-ak_info_crti <- function (l, P) {
+ak_info_crit <- function (l, P) {
   Calc <- 2*l - 2*P
   return(Calc)
 }
-
-# print(paste("bic2", bay_info_crit(out$loglik, out$df, out$n)))
-cat("BIC2", bay_info_crit(out$loglik, out$df, out$n))
-cat("BIC3", bay_info_crit(out3$loglik, out3$df, out3$n), "\n")
-
-cat("AIC2", ak_info_crti(out$loglik, out$df))
-cat("AIC3", ak_info_crti(out3$loglik, out3$df))
 ```
 ***Using R, calculate the BIC for the best two-cluster model and the best three-cluster model. What values did you get?***
 
+Check those values against the `Mclust` output. You should get identical results.
+
 ```{r}
 cat("BIC2", bay_info_crit(out$loglik, out$df, out$n))
 cat("BIC3", bay_info_crit(out3$loglik, out3$df, out3$n), "\n")
-
 ```
 
-Check those values against the `Mclust` output. You should get identical results.
+*The BIC value for the best two-cluster models is -561.7285 and -562.5522 for the best three-cluster model. These numbers are identical to the ones produced by $Mclust$*
+
+
 ***Using R, calculate the AIC for the best two-cluster model and the best three-cluster model. What values did you get?***
 
 ```{r}
-cat("AIC2", ak_info_crti(out$loglik, out$df))
-cat("AIC3", ak_info_crti(out3$loglik, out3$df))
+cat("AIC2", ak_info_crit(out$loglik, out$df))
+cat("AIC3", ak_info_crit(out3$loglik, out3$df))
 ```
+
+*The AIC value for the best two-cluster is -483.4519 and -448.1481 for the best three-cluster model.*
 
 ***Which model is better according to BIC? Which model is better according to AIC? Explain why in your own words.***
 Recall from yesterday's lecture that BIC tends to err on the side of models that are too small, while AIC tends to err on the side of models that are too big.
 
-*According to BIC the better model is ...*
+*According to BIC the better model is the two-cluster model as it has a value higher than the three-cluster model. The higher value indicates that the two-cluster model has a higher probability of being true given the data in the iris dataset. For AIC, the better model is the three-cluster model as this model has the higher value. *
 
 ### Whiteboard problem
 
@@ -181,18 +179,27 @@ out <- Mclust(scaled, G=2:9)
 ### Problem 2.a
 Make a bar chart of the classification, where we divide individuals by region and fill color them by which cluster they are in.
 ```{r}
-
+df$cluster <- as.factor(out$classification)
+ggplot(df) + geom_bar(aes(x=region, fill=cluster)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 ```
 
 ***How does this clustering compare with our previous results using hierarchical clustering?***
 
-**
+*Model-based clustering produced some similarities to hierarchical clustering. Both methods produces homogenous clusters for America and Oceania, and a fairly homogenous cluster for East Asia. In addition, both methods placed the individuals from the Middle East across three cluster. Also, both methods produced a cluster composed of individuals from the Middle East, Europe, Central South Asia, and Africa.*
 
 ### Problem 2.b
 Something interesting is happening with the African individuals. To see more, filter your data frame `df` to keep only the African individuals, then make a bar plot where individuals are separated by population (`pop` column in data frame) and fill colored by cluster.
 ```{r}
+library(pals)
+africa <- df[df$region == "AFRICA", ]
+ggplot(africa) + geom_bar(aes(x=cluster, fill=pop)) +
+  scale_fill_manual(values = as.vector(alphabet(15))) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 ```
 
 ***Cluster 7 contains almost all individuals from which populations?***
+
+*In the plot cluster 7 appears to contain most individuals from BiakaPygmy, MbutiPygmy, and San populations.*
 
 (If you recall from our hierarchical clustering exercise, these three populations are all hunter-gatherers. Pretty impressive that the Gaussian Mixture Model picks them out so well!)
