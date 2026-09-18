@@ -116,19 +116,43 @@ To see why `Mclust` selected what is seemingly a suboptimal number of clusters, 
 
 From the `Mclust` output `out`, you can access these quantities as $n$ = `out$n`, $p$ = `out$df` (for "degrees of freedom"), and $\log(L)$ = `out$loglik`.
 ```{r}
-out$n
+bay_info_crit <- function(L, p, n) {
+  calc <- 2*L - p*log(n)
+  return(calc)
+}
 
-out$df
+ak_info_crti <- function (l, P) {
+  Calc <- 2*l - 2*P
+  return(Calc)
+}
 
-out$loglik
+# print(paste("bic2", bay_info_crit(out$loglik, out$df, out$n)))
+cat("BIC2", bay_info_crit(out$loglik, out$df, out$n))
+cat("BIC3", bay_info_crit(out3$loglik, out3$df, out3$n), "\n")
 
+cat("AIC2", ak_info_crti(out$loglik, out$df))
+cat("AIC3", ak_info_crti(out3$loglik, out3$df))
 ```
 ***Using R, calculate the BIC for the best two-cluster model and the best three-cluster model. What values did you get?***
+
+```{r}
+cat("BIC2", bay_info_crit(out$loglik, out$df, out$n))
+cat("BIC3", bay_info_crit(out3$loglik, out3$df, out3$n), "\n")
+
+```
+
 Check those values against the `Mclust` output. You should get identical results.
 ***Using R, calculate the AIC for the best two-cluster model and the best three-cluster model. What values did you get?***
 
+```{r}
+cat("AIC2", ak_info_crti(out$loglik, out$df))
+cat("AIC3", ak_info_crti(out3$loglik, out3$df))
+```
+
 ***Which model is better according to BIC? Which model is better according to AIC? Explain why in your own words.***
 Recall from yesterday's lecture that BIC tends to err on the side of models that are too small, while AIC tends to err on the side of models that are too big.
+
+*According to BIC the better model is ...*
 
 ### Whiteboard problem
 
