@@ -1,0 +1,198 @@
+---
+title: "Exercise - Enrichment Analysis"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Today, we'll be working with RNAseq gene expression data from Fu et al.^["EGF-mediated induction of Mcl-1 at the switch to lactation is essential for alveolar cell survival" Nature Cell Biology (2015) 17:365, <https://doi.org/10.1038/ncb3117>]
+We'll be using these data to compare patterns of gene expression in mammary glands from lactating versus pregnant mice, to identify relevant sets of genes or pathways.
+
+I downloaded these data from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60450) database.
+I've already preprocessed them, to estimate differences in gene expression from the RNA read data and to annotate the genes with links to the standard Entrez Gene database: <https://www.ncbi.nlm.nih.gov/gene>.
+
+On the d2l site, download the file `Annotated_Results_LvV.RData` from Content -> Datasets -> FuGeneExpression and save it in an appropriate directory on your computer.
+In that same directory, create a new script file to carryout this exercise.
+Be sure to use the RStudio menu to Session -> Set Working Directory -> To Source File Location, to ensure your script can find the files you want to load.
+
+In that script file, remember to load the tidyverse.
+```{r message=FALSE}
+library(tidyverse)
+```
+
+To load the data, simply
+```{r}
+load("Annotated_Results_LvV.RData")
+```
+When you do so, you'll see two new dataframes in your environment. We'll be working with `shrinkLvV`. This contains estimates of gene expression changes comparing mammary cells from lactating versus pregnant mice. (Here "shrink" indicates that these estimates have been adjusted to account for the noise in measuring changes in low-expression genes.)
+
+Let's look at the first rows of `shrinkLvV`
+```{r}
+head(shrinkLvV)
+```
+
+The expression changes in `shrinkLvV` are represented by the `logFC` variable. This contains the log~2~ of the expression change, so a value of +2 means that the expression level in lactating mice was four times that in pregnant mice, and a value of -1 means that it was half. You'll also see a `pvalue` variable, which is a p-value testing the null hypothesis that the log fold-change is equal to zero (so no change).
+
+---
+
+### Problem 1
+
+For this exercise, we want to focus only on genes that are well-studied enough to have Entrez Gene annotations.
+***Filter your `shrinkLvV` data frame to include only rows for which `!is.na(Entrez)` is TRUE, and store the resulting data frame into a variable called `shrink_data` .***
+
+(The `is.na(Entrez)` part of the command evaluates whether the `Entrez` value is missing for that gene. The `!` operator negates the result of that, so we only keep entries where the `Entrez` value is *not* missing.)
+```{r}
+
+```
+(Hint: After this step, your `shrinkLvV` dataframe should have 16315 rows.)
+
+### Problem 2
+
+***Make a point plot of logFC versus. -log10(pvalue).*** This is called a volcano plot.
+
+```{r}
+
+```
+
+***Question: Is there a relationship between the fold-change and the p-value?***
+
+*Answer: *
+
+### Problem 3
+Notice that there are a small number of genes with extremely large fold-change.
+***Print the rows of your `shrinkLvV` that have `logFC > 5`.*** (This corresponds to a fold-change of >2^5^ = >32.)
+
+```{r}
+
+```
+
+***Question: Looking at the names of the upregulated genes, can you interpret any in the context of lactation?***
+
+*Answer: *
+
+### Problem 4
+
+For our enrichment analysis we're interested in genes that are upregulated even modestly. ***So use the `mutate` command to add a column to `shrinkLvV` named `upregulated` that records whether or not a gene has `logFC > 1` and `pvalue < 0.05`.***
+
+```{r}
+
+```
+
+(Hint 1: To combine two logical statments in R, use the `&` operator. Hint 2: You should find that 1062 genes are upregulated. You can check this by summing the relevant column: `sum(shrinkLvV$upregulated)`.)
+
+### Problem 5
+
+Now we'll be using a database of genes associated with particular functions to search for functional enrichment in upregulated genes. In particular, we'll be using the "hallmark gene sets" from the Molecular Signatures Database <http://software.broadinstitute.org/gsea/msigdb/collections.jsp>, mapped from human gene IDs to orthologous mouse gene IDs. These are stored in the `Mm.h.all.v7.1.entrez.rds` file, which I obtained from <http://bioinf.wehi.edu.au/MSigDB/>. Download that file to the same directory as your script, then load it.
+```{r}
+Mm.H <- readRDS('Mm.h.all.v7.1.entrez.rds')
+```
+You'll see that you have a new object in your environment, `Mm.H`, which stores the genes associated with each molecular function. Here is the first entry.
+```{r}
+Mm.H[1]
+```
+
+The genes we'll focus on are those have to do with cholesterol metabolism. Let's store the genes in pathway in a variable, so we don't have to type it repeatedly.
+```{r}
+
+chol_genes <- Mm.H[["HALLMARK_CHOLESTEROL_HOMEOSTASIS"]]
+
+```
+
+Now let's plot the distributions of log~2~ fold-change values for genes with and without this function
+```{r}
+shrinkLvV %>%
+    mutate(in_p = Entrez %in% chol_genes ) %>%
+    ggplot(aes(x = in_p, y = logFC)) +
+    geom_violin()
+
+```
+
+***Question: What is each line of this code doing?***
+
+***Question: Based on this plot, does it appear that genes in the pathway are enriched for increases in expression?***
+
+*Answer: *
+
+### Problem 6
+
+To run Fisher's Exact Test, we'll need to fill in the table. As an example, to calculate the lower-left entry, corresponding to genes that are not associated with the function of interest and are upregulated, we use the following command. 
+```{r}
+ll <- shrinkLvV %>% 
+  filter(!(Entrez %in% chol_genes) & upregulated) %>% 
+  nrow()
+```
+(Here we filter our data set to keep only those genes whose Entrez identifier is *not* in the list of genes associated with our function and are upregulated. We then pass the resulting dataframe to the `nrow` method, which simply returns its length.)
+
+***Now calculate the remaining entries.***
+`ul`: the number of genes associated with function `p` and upregulated
+`ur`: the number of genes associated with function `p` but not upregulated.
+`lr`: the number of genes not associated with function `p` and not upregulated.
+
+```{r}
+
+```
+
+(Hint: The table in the next problem shows your expected results.)
+
+### Problem 7
+
+Now we assemble our values into a table
+```{r}
+table <- matrix(c(ul,ll,ur,lr), nrow=2)
+table
+```
+
+Then we run Fisher's Exact Test.
+```{r}
+fisher.test(table)
+```
+
+***Question: Based on the results of this statistical test, what can we say about genes involved in cholesterol homeostasis in mammary cells from lactating versus pregnant mice?***
+
+*Answer: *
+
+### Problem 8
+
+Now let's switch to examining estrogen-related genes.
+```{r}
+est_genes <- Mm.H[["HALLMARK_ESTROGEN_RESPONSE_EARLY"]]
+
+```
+
+#### Problem 8.a
+As before, ***plot a comparison of fold-changes for this set of genes versus the rest of the data.***
+
+```{r}
+
+
+```
+
+***Question: Given this plot, do you expect to get an enrichment in Fisher's test, following the procedure above?***
+
+*Answer: *
+
+#### Problem 8.b
+***Carry out Fisher's Exact Test following the procedure above.***
+
+```{r}
+
+```
+
+***Question: What p-value do you obtain? How do you interpret this p-value?***
+
+*Answer:*
+
+#### Problem 8.c
+***Now instead of testing whether these genes were signficantly upregulated, test whether they were downregulated.***
+
+```{r}
+
+```
+
+***Question: What p-value do you obtain? How do you interpret this p-value?***
+
+*Answer:*
