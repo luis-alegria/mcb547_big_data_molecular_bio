@@ -194,7 +194,7 @@ Something interesting is happening with the African individuals. To see more, fi
 ```{r}
 library(pals)
 africa <- df[df$region == "AFRICA", ]
-ggplot(africa) + geom_bar(aes(x=cluster, fill=pop)) +
+ggplot(africa) + geom_bar(aes(x=pop, fill=cluster)) +
   scale_fill_manual(values = as.vector(alphabet(15))) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 ```
