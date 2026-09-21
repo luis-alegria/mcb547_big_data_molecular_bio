@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output:
   pdf_document: default
   html_document: default
+  word_document: default
 editor_options:
   chunk_output_type: console
 ---
@@ -61,7 +62,7 @@ out$BIC
 
 ***What is best model and number of clusters, based on BIC? What is the second best model and number of clusters? How much do they differ in BIC?***
 
-*According to BIC, the best model is VEV (ellipsoidal, equal shape) with two clusters and a $BIC=-561.7285$. The second best models is VEV (ellipsoidal, equal shape). with three clusters and $BIC=-562.5522$. The difference in BIC between the two models is small at $-561.7285 - (-562.5522) = 0.8237$.*
+*According to BIC, the best model is VEV (ellipsoidal, equal shape) with two clusters and a $BIC=-561.7285$. The second-best model is VEV (ellipsoidal, equal shape) with three clusters and $BIC=-562.5522$. The BIC difference between the two models is small: $-561.7285 - (-562.5522) = 0.8237$.*
 
 ## Problem 1.b
 
@@ -78,7 +79,7 @@ ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 
 ***How well does this clustering reflect the known biology of these three species?***
 
-*The clustering does not reflect the known biology of the three species well as versicolor and virginica are placed in the same cluster but are different species.*
+*The clustering does not reflect the known biology of the three species well, as versicolor and virginica are grouped despite being different species.*
 
 ## Problem 1.c
 
@@ -99,7 +100,7 @@ ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 
 ***How well does this clustering reflect the known biology of our sample?***
 
-*Clustering with using 3 clusters reflect the biology of the species well as using this number of clusters places each setosa and versicolor into one cluster with virginica mostly in its own cluster wtih some of the samples being placed in the versicolor cluster.*
+*Clustering with 3 clusters reflects the species' biology well, as it places setosa and versicolor in one cluster, with virginica mostly in its own cluster, with some samples falling into the versicolor cluster.*
 
 Recall that mixture modeling gives us an uncertainty estimate for the clustering of each data point. We can visualize that easily in this plot, where the size of each point corresponds to the uncertainty of its classification.
 ```{r eval=F}
@@ -108,7 +109,7 @@ plot(out3, "uncertainty")
 
 ***Where do the flowers with the largest uncertainty lie in our data space?***
 
-*Flowers with the largest uncertainty tend to lie in the areas where there is intersection between versicolor and virginica samples. In these areas, the size of the points or uncertainty in classification tend to be larger.*
+*Flowers with the greatest uncertainty tend to lie in areas where versicolor and virginica samples overlap. In these areas, the size of the points or the uncertainty in classification tends to be larger.*
 
 ## Problem 1.d
 
@@ -135,7 +136,7 @@ cat("BIC2", bay_info_crit(out$loglik, out$df, out$n))
 cat("BIC3", bay_info_crit(out3$loglik, out3$df, out3$n), "\n")
 ```
 
-*The BIC value for the best two-cluster models is -561.7285 and -562.5522 for the best three-cluster model. These numbers are identical to the ones produced by $Mclust$*
+*The BIC value for the best two-cluster model is -561.7285, and -562.5522 for the best three-cluster model. These values match those produced by $Mclust$.*
 
 
 ***Using R, calculate the AIC for the best two-cluster model and the best three-cluster model. What values did you get?***
@@ -145,19 +146,19 @@ cat("AIC2", ak_info_crit(out$loglik, out$df))
 cat("AIC3", ak_info_crit(out3$loglik, out3$df))
 ```
 
-*The AIC value for the best two-cluster is -483.4519 and -448.1481 for the best three-cluster model.*
+*The AIC value for the best two-cluster model is -483.4519, and -448.1481 for the best three-cluster model.*
 
 ***Which model is better according to BIC? Which model is better according to AIC? Explain why in your own words.***
 Recall from yesterday's lecture that BIC tends to err on the side of models that are too small, while AIC tends to err on the side of models that are too big.
 
-*According to BIC the better model is the two-cluster model as it has a value higher than the three-cluster model. The higher value indicates that the two-cluster model has a higher probability of being true given the data in the iris dataset. For AIC, the better model is the three-cluster model as this model has the higher value. *
+*According to BIC, the two-cluster model is better because it has a higher value than the three-cluster model. The penalty term in the BIC calculation is $-plog(n)$. This means BIC favors less complex models because the penalty term increases as more parameters are added. For AIC, the three-cluster model is better because it has the higher value. For AIC, the penalty term is $-2p$. Here, the penalty increases more slowly as parameters are added than in BIC, meaning this criterion favors more complex models.*
 
 ### Whiteboard problem
 
 Let's say someone defined a new (pretend) information criterion $XIC = 2 \log(L) - 3p$. For large datasets, would this lead to more or less complex models as compared to the BIC and AIC? Draw a graph similar to what we did in lecture to explain.
 
-```{r, eval=F, echo = FALSE, out.width = "600px"}
-# knitr::include_graphics("YourFigure.jpg")
+```{r, echo = FALSE, out.width="75%", fig.align="center"}
+knitr::include_graphics("mclust_wb.jpg")
 ```
 
 ### Problem 2
@@ -186,7 +187,7 @@ ggplot(df) + geom_bar(aes(x=region, fill=cluster)) +
 
 ***How does this clustering compare with our previous results using hierarchical clustering?***
 
-*Model-based clustering produced some similarities to hierarchical clustering. Both methods produces homogenous clusters for America and Oceania, and a fairly homogenous cluster for East Asia. In addition, both methods placed the individuals from the Middle East across three cluster. Also, both methods produced a cluster composed of individuals from the Middle East, Europe, Central South Asia, and Africa.*
+*Model-based clustering produced some similarities to hierarchical clustering. Both methods produce homogeneous clusters for America and Oceania, and a fairly homogeneous cluster for East Asia. In addition, both methods placed the individuals from the Middle East across three clusters. Both methods also produced a cluster composed of individuals from the Middle East, Europe, Central South Asia, and Africa.*
 
 ### Problem 2.b
 Something interesting is happening with the African individuals. To see more, filter your data frame `df` to keep only the African individuals, then make a bar plot where individuals are separated by population (`pop` column in data frame) and fill colored by cluster.
