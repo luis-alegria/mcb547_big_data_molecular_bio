@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Enrichment Analysis"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -46,7 +48,8 @@ For this exercise, we want to focus only on genes that are well-studied enough t
 
 (The `is.na(Entrez)` part of the command evaluates whether the `Entrez` value is missing for that gene. The `!` operator negates the result of that, so we only keep entries where the `Entrez` value is *not* missing.)
 ```{r}
-
+shrinkLvV <- shrinkLvV |> 
+  filter(!is.na(Entrez))
 ```
 (Hint: After this step, your `shrinkLvV` dataframe should have 16315 rows.)
 
@@ -55,7 +58,8 @@ For this exercise, we want to focus only on genes that are well-studied enough t
 ***Make a point plot of logFC versus. -log10(pvalue).*** This is called a volcano plot.
 
 ```{r}
-
+ggplot(data=shrinkLvV, aes(x=logFC, y=-log(pvalue))) +
+  geom_point()
 ```
 
 ***Question: Is there a relationship between the fold-change and the p-value?***
@@ -67,7 +71,8 @@ Notice that there are a small number of genes with extremely large fold-change.
 ***Print the rows of your `shrinkLvV` that have `logFC > 5`.*** (This corresponds to a fold-change of >2^5^ = >32.)
 
 ```{r}
-
+shrinkLvV |> 
+  filter(logFC > 5)
 ```
 
 ***Question: Looking at the names of the upregulated genes, can you interpret any in the context of lactation?***
@@ -80,6 +85,10 @@ For our enrichment analysis we're interested in genes that are upregulated even 
 
 ```{r}
 
+shrinkLvV <- shrinkLvV |>
+  mutate(upregulated = if_else(logFC > 1 & pvalue < 0.05, TRUE, FALSE))
+
+sum(shrinkLvV$upregulated)
 ```
 
 (Hint 1: To combine two logical statments in R, use the `&` operator. Hint 2: You should find that 1062 genes are upregulated. You can check this by summing the relevant column: `sum(shrinkLvV$upregulated)`.)
@@ -113,9 +122,11 @@ shrinkLvV %>%
 
 ***Question: What is each line of this code doing?***
 
+*Answer: The first line pipes the data stored in the variable $shrinkLvV$. The second line creates a new column $in_p$ in $shrinkLvV$ with value TRUE if the value in the $Entrez$ column is found in $chol_genes$, else with the value FALSE and pipes the output. The third line calls ggplot to create a visualization where x is the $in_p$ column and y is the $logFC$ column. The fourth line creates a violin plot visualization.*
+
 ***Question: Based on this plot, does it appear that genes in the pathway are enriched for increases in expression?***
 
-*Answer: *
+*Answer: Based on the plot it appears that genes for cholesterol metabolism are enriched for gene expression. In the FALSE axis, the density of points appears to be close logFC of zero while for the TRUE axis, the density of point moves away from zero to positive values. *
 
 ### Problem 6
 
