@@ -48,7 +48,7 @@ For this exercise, we want to focus only on genes that are well-studied enough t
 
 (The `is.na(Entrez)` part of the command evaluates whether the `Entrez` value is missing for that gene. The `!` operator negates the result of that, so we only keep entries where the `Entrez` value is *not* missing.)
 ```{r}
-shrinkLvV <- shrinkLvV |> 
+shrinkLvV <- shrinkLvV %>%  
   filter(!is.na(Entrez))
 ```
 (Hint: After this step, your `shrinkLvV` dataframe should have 16315 rows.)
@@ -71,7 +71,7 @@ Notice that there are a small number of genes with extremely large fold-change.
 ***Print the rows of your `shrinkLvV` that have `logFC > 5`.*** (This corresponds to a fold-change of >2^5^ = >32.)
 
 ```{r}
-shrinkLvV |> 
+shrinkLvV %>%  
   filter(logFC > 5)
 ```
 
@@ -85,7 +85,7 @@ For our enrichment analysis we're interested in genes that are upregulated even 
 
 ```{r}
 
-shrinkLvV <- shrinkLvV |>
+shrinkLvV <- shrinkLvV %>% 
   mutate(upregulated = if_else(logFC > 1 & pvalue < 0.05, TRUE, FALSE))
 
 sum(shrinkLvV$upregulated)
@@ -144,7 +144,17 @@ ll <- shrinkLvV %>%
 `lr`: the number of genes not associated with function `p` and not upregulated.
 
 ```{r}
+ul <- shrinkLvV %>% 
+  filter((Entrez %in% chol_genes) & upregulated) %>% 
+  nrow()
 
+ur <- shrinkLvV %>% 
+  filter((Entrez %in% chol_genes) & !upregulated) %>% 
+  nrow()
+
+lr <- shrinkLvV %>% 
+  filter(!(Entrez %in% chol_genes) & !upregulated) %>% 
+  nrow()
 ```
 
 (Hint: The table in the next problem shows your expected results.)
@@ -178,30 +188,83 @@ est_genes <- Mm.H[["HALLMARK_ESTROGEN_RESPONSE_EARLY"]]
 As before, ***plot a comparison of fold-changes for this set of genes versus the rest of the data.***
 
 ```{r}
-
+shrinkLvV %>%
+    mutate(in_p = Entrez %in% est_genes ) %>%
+    ggplot(aes(x = in_p, y = logFC)) +
+    geom_violin()
 
 ```
 
 ***Question: Given this plot, do you expect to get an enrichment in Fisher's test, following the procedure above?***
 
-*Answer: *
+*Answer: No, the distribution for the estrogen genes in similar to the rest of the genes in logfold change.*
 
 #### Problem 8.b
 ***Carry out Fisher's Exact Test following the procedure above.***
 
 ```{r}
+ul2 <- shrinkLvV %>% 
+  filter((Entrez %in% est_genes) & upregulated) %>% 
+  nrow()
 
+ll2 <- shrinkLvV %>% 
+  filter(!(Entrez %in% est_genes) & upregulated) %>% 
+  nrow()
+
+ur2 <- shrinkLvV %>% 
+  filter((Entrez %in% est_genes) & !upregulated) %>% 
+  nrow()
+
+lr2 <- shrinkLvV %>% 
+  filter(!(Entrez %in% est_genes) & !upregulated) %>% 
+  nrow()
+```
+
+```{r}
+table2 <- matrix(c(ul2,ll2,ur2,lr2), nrow=2)
+table2
+```
+
+```{r}
+fisher.test(table2)
 ```
 
 ***Question: What p-value do you obtain? How do you interpret this p-value?***
 
-*Answer:*
+*Answer: The p-value for the estrogen related genes is 1.*
 
 #### Problem 8.c
 ***Now instead of testing whether these genes were signficantly upregulated, test whether they were downregulated.***
 
 ```{r}
+# add downregulated column to shrinkLvV
+shrinkLvV <- shrinkLvV %>% 
+  mutate(downregulated = if_else(logFC < -1 & pvalue < 0.05, TRUE, FALSE))
+```
 
+```{r}
+ul3 <- shrinkLvV %>% 
+  filter((Entrez %in% est_genes) & downregulated) %>% 
+  nrow()
+
+ll3 <- shrinkLvV %>% 
+  filter(!(Entrez %in% est_genes) & downregulated) %>% 
+  nrow()
+
+ur3 <- shrinkLvV %>% 
+  filter((Entrez %in% est_genes) & !downregulated) %>% 
+  nrow()
+
+lr3 <- shrinkLvV %>% 
+  filter(!(Entrez %in% est_genes) & !downregulated) %>% 
+  nrow()
+```
+
+```{r}
+table3 <- matrix(c(ul3,ll3,ur3,lr3), nrow=2)
+table3
+
+fisher.test(table3)
 ```
 
 ***Question: What p-value do you obtain? How do you interpret this p-value?***
