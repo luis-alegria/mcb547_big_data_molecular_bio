@@ -1,0 +1,97 @@
+---
+title: "Exercise - Multiple Hypotheses and FDR"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+We'll be working with our favorite gene expression data set again.
+First, load up the `tidyverse` and our expression data.
+```{r message=FALSE}
+library(tidyverse)
+load("Annotated_Results_LvV.RData")
+```
+
+And filter our data as before and add the `upregulated` column.
+```{r}
+shrinkLvV <- shrinkLvV %>% filter(!is.na(Entrez))
+shrinkLvV <- shrinkLvV %>% mutate(upregulated = (logFC > 1) & (pvalue < 0.05))
+```
+
+Today, we'll be testing against a larger set of gene sets, from the Kyoto Encyclopedia of Genes and Genomes. Download the file Mm.c2.cp.kegg.v7.1.entrez.rds on d2l from  Datasets -> FuGeneExpression, and save it in your working directory. The we load the gene set definitions.
+```{r}
+db <- readRDS('Mm.c2.cp.kegg.v7.1.entrez.rds')
+```
+
+Now we'll calculate p-values for all of our tests.
+To do that, we'll first define a function that calculates the p-value for a single gene set being overrepresented in the upregulated genes.
+```{r}
+enrichment_pval <- function(gs) {
+  ul <- shrinkLvV %>% filter((Entrez %in% db[[gs]]) & upregulated) %>% nrow()
+  ur <- shrinkLvV %>% filter((Entrez %in% db[[gs]]) & !upregulated) %>% nrow()
+  ll <- shrinkLvV %>% filter(!(Entrez %in% db[[gs]]) & upregulated) %>% nrow()
+  lr <- shrinkLvV %>% filter(!(Entrez %in% db[[gs]]) & !upregulated) %>% nrow()
+  table <- matrix(c(ul,ll,ur,lr), nrow=2)
+  return(fisher.test(table,alternative="greater")$p.value)
+}
+```
+Then we use a `map` function to apply this function to all the gene sets
+```{r}
+all_pvals <- map_dbl(names(db), enrichment_pval)
+```
+And finally we store the results in a new tibble 
+```{r}
+all_tests <- tibble(set=names(db), p.value=all_pvals)
+```
+
+### Problem 1
+
+***Plot a histogram of the p-values from all the tests.*** Hint: use the `geom_histogram` function in ggplot, with the x-coordinate given by `p.value`.
+
+```{r}
+ggplot(data=all_tests, aes(x=p.value)) +
+  geom_histogram()
+```
+
+***What does the peak of tests near p=0 indicate?***
+
+
+### Problem 2
+
+Sort your `all_tests` data frame by `p.value` using
+```{r}
+all_tests <- all_tests %>% arrange(p.value)
+```
+
+Then use mutate to add a column to all_tests called Bonferroni that represents Bonferroni-adjusted p-values. ***Show your code.***
+
+```{r echo=FALSE}
+all_tests <- all_tests %>% 
+  mutate(bonferroni = nrow(all_tests) * p.value)
+```
+
+***How many gene sets are statistically significant at a Bonferroni-adjusted p-value threshold of 0.05?***
+
+***Of those gene sets, how many are expected to be false positives?***
+
+
+### Problem 3
+
+***Add a column to all_tests called `fdr` that contains Benjamini-Hochberg adjusted p-values.***
+```{r}
+
+```
+
+(Hint: The expression `1:m` will create a vector of integers from `1` to `m`. You may want to create an intermediate `rank` column to help you calculate `fdr`.)
+
+***How many genes sets are statistically significant at a false discovery rate of 0.05?***
+
+***Of those gene sets, how many are expected to be false positives?***
+
+### Problem 4
+
+***Print out the names of the gene sets with FDR < 0.05. Biologically, why might this set of genes be upregulated in mammary cells from lactating mice?*** (Hint: See the abstract of ref. 24 from the Fu et al. 2015 paper in the D2L Datasets folder to learn about the importance of lipids in lactation.)
