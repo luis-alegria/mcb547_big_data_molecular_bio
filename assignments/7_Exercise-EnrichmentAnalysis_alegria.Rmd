@@ -2,8 +2,10 @@
 title: "Exercise - Enrichment Analysis"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -64,7 +66,7 @@ ggplot(data=shrinkLvV, aes(x=logFC, y=-log10(pvalue))) +
 
 ***Question: Is there a relationship between the fold-change and the p-value?***
 
-*Answer: Based on the volcano plot, yes, there is a relationship between the two values for some genes. As logFC values move away from zero, the -log10(pvalue) becomes larger meaning that the p-values are smaller. *
+*Answer: Based on the volcano plot, yes, some genes show a relationship between the two values. As logFC values move away from zero, -log10(pvalue) increases, meaning the p-values are smaller.*
 
 ### Problem 3
 Notice that there are a small number of genes with extremely large fold-change.
@@ -77,7 +79,7 @@ shrinkLvV %>%
 
 ***Question: Looking at the names of the upregulated genes, can you interpret any in the context of lactation?***
 
-*Answer: Two of the genes, casein alpha s2-like A and casein alpha s2-like B, code for proteins found in the milk of mice. (sources:https://www.ncbi.nlm.nih.gov/gene/12993 and https://www.ncbi.nlm.nih.gov/gene/12992)*
+*Answer: Two genes, casein alpha s2-like A and casein alpha s2-like B, encode proteins found in the milk of lactating female mice. (sources:https://www.ncbi.nlm.nih.gov/gene/12993 and https://www.ncbi.nlm.nih.gov/gene/12992)*
 
 ### Problem 4
 
@@ -122,11 +124,11 @@ shrinkLvV %>%
 
 ***Question: What is each line of this code doing?***
 
-*Answer: The first line pipes the data stored in the variable $shrinkLvV$. The second line creates a new column $in_p$ in $shrinkLvV$ with value TRUE if the value in the $Entrez$ column is found in $chol_genes$, else with the value FALSE and pipes the output. The third line calls ggplot to create a visualization where x is the $in_p$ column and y is the $logFC$ column. The fourth line creates a violin plot visualization.*
+*Answer: The first line pipes the data stored in the variable $shrinkLvV$. The second line creates a new column, $in_p$, in $shrinkLvV$ with TRUE if a value in the $Entrez$ column appears in $chol_genes$ and FALSE otherwise, and then pipes the output. The third line calls ggplot to create a visualization with $in_p$ on the x-axis and $logFC$ on the y-axis. The fourth line creates a violin plot visualization.*
 
 ***Question: Based on this plot, does it appear that genes in the pathway are enriched for increases in expression?***
 
-*Answer: Based on the plot it appears that genes for cholesterol metabolism are enriched for gene expression. In the FALSE axis, the density of points appears to be close logFC of zero while for the TRUE axis, the density of point moves away from zero to positive values. *
+*Answer: Based on the plot, genes for cholesterol metabolism appear enriched in gene expression. In the FALSE axis (non-cholesterol metabolism genes), the points cluster near a logFC of zero, whereas in the TRUE axis (cholesterol metabolism genes), the points shift away from zero logFC toward positive values.*
 
 ### Problem 6
 
@@ -174,7 +176,7 @@ fisher.test(table)
 
 ***Question: Based on the results of this statistical test, what can we say about genes involved in cholesterol homeostasis in mammary cells from lactating versus pregnant mice?***
 
-*Answer: Based on the results of this statistical test, with p-value of 9.444e-16, *
+*Answer: Based on Fisher's Exact Test (p = 9.444e-16), we reject the null hypothesis that gene expression in cholesterol homeostasis is unchanged between lactating and pregnant mice. Since we created an upregulated criteria (logFC > 1 & pvalue < 0.05), cholesterol homeostasis is upregulated in lactating mice, and the odds ratio of 7.491026 indicates a large effect size.*
 
 ### Problem 8
 
@@ -197,7 +199,7 @@ shrinkLvV %>%
 
 ***Question: Given this plot, do you expect to get an enrichment in Fisher's test, following the procedure above?***
 
-*Answer: Given the plot, we do not expect to get enrichment in the Fisher's test. The density of points for both estrogen-related genes and the rest of the genes appear to be concnetrated around a logFC of zero.*
+*Answer: Given the plot, we do not expect enrichment in Fisher's test. The point densities for both estrogen-related genes and the remaining genes appear concentrated around a logFC of zero.*
 
 #### Problem 8.b
 ***Carry out Fisher's Exact Test following the procedure above.***
@@ -231,7 +233,7 @@ fisher.test(table2)
 
 ***Question: What p-value do you obtain? How do you interpret this p-value?***
 
-*Answer: The p-value for the estrogen related genes upregulation is 1. With this p-value we can not reject the null hypothesis that gene expression in estrogen genes is different from the gene expression for the rest of the genes.*
+*Answer:The p-value for estrogen-related gene upregulation is 1. With this p-value, we cannot reject the null hypothesis that estrogen-related gene expression is unchanged compared with other genes.*
 
 #### Problem 8.c
 ***Now instead of testing whether these genes were signficantly upregulated, test whether they were downregulated.***
@@ -269,4 +271,4 @@ fisher.test(table3)
 
 ***Question: What p-value do you obtain? How do you interpret this p-value?***
 
-*Answer: The p-value for testing whether the estrogen related genes are downregulated in comparison to the rest of the genes is $p-value = 2.2e-06$. This means that we can reject the null hypothesis that the gene expression in estrogen related genes is unchanged between pregnant and lactating mice and that it is downregulated in this case. *
+*Answer: The p-value for testing whether estrogen-related genes are downregulated compared with the other genes is $p-value = 2.2e-06$. This means we can reject the null hypothesis that gene expression in estrogen-related genes is unchanged between pregnant and lactating mice and that it is downregulated in lactating mice, with an odds ratio of 2.324591 indicating some effect of downregulation.*
