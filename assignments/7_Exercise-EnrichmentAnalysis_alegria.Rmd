@@ -272,3 +272,7 @@ fisher.test(table3)
 ***Question: What p-value do you obtain? How do you interpret this p-value?***
 
 *Answer: The p-value for testing whether estrogen-related genes are downregulated compared with the other genes is $p-value = 2.2e-06$. This means we can reject the null hypothesis that gene expression in estrogen-related genes is unchanged between pregnant and lactating mice and that it is downregulated in lactating mice, with an odds ratio of 2.324591 indicating some effect of downregulation.*
+
+### Personal Reflection
+
+For this assignment, I had to slow down and consider how to interpret testing upregulation in estrogen-related genes with p-values of 1. Since the null hypothesis here is that estrogen-related genes are unchanged compared with the other genes, a p-value of 1 means there is no evidence against the null. Initially, I thought this provided evidence for the null, but it doesn't. In my notes, I wrote: If p > 0.05, can't say anything. And this helped me correct my thinking. 

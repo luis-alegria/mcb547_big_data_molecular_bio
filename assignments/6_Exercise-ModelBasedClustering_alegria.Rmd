@@ -103,7 +103,7 @@ ggplot(iris) + geom_bar(aes(x=Species,fill=cluster))
 *Clustering with 3 clusters reflects the species' biology well, as it places setosa and versicolor in one cluster, with virginica mostly in its own cluster, with some samples falling into the versicolor cluster.*
 
 Recall that mixture modeling gives us an uncertainty estimate for the clustering of each data point. We can visualize that easily in this plot, where the size of each point corresponds to the uncertainty of its classification.
-```{r eval=F}
+```{r}
 plot(out3, "uncertainty")
 ```
 
@@ -152,6 +152,10 @@ cat("AIC3", ak_info_crit(out3$loglik, out3$df))
 Recall from yesterday's lecture that BIC tends to err on the side of models that are too small, while AIC tends to err on the side of models that are too big.
 
 *According to BIC, the two-cluster model is better because it has a higher value than the three-cluster model. The penalty term in the BIC calculation is $-plog(n)$. This means BIC favors less complex models because the penalty term increases as more parameters are added. For AIC, the three-cluster model is better because it has the higher value. For AIC, the penalty term is $-2p$. Here, the penalty increases more slowly as parameters are added than in BIC, meaning this criterion favors more complex models.*
+
+### Personal Reflection
+
+During the whiteboard question, I reviewed my notes to determine where the XIC criterion would fall relative to AIC and BIC. I incorrectly wrote that BIC leads to more complex models, while AIC leads to less complex models. A group member pointed out the error. I am glad they did, because if they hadn't, my interpretation of XIC model complexity would have been incorrect.
 
 ### Whiteboard problem
 
