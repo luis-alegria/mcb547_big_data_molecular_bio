@@ -58,12 +58,12 @@ all_tests <- tibble(set=names(db), p.value=all_pvals)
 
 ```{r}
 ggplot(data=all_tests, aes(x=p.value)) +
-  geom_histogram()
+  geom_histogram(color="black")
 ```
 
 ***What does the peak of tests near p=0 indicate?***
 
-*The peak of tests near p=0 indicates that there is gene sets for which the null hypothesis can be rejected, which is that there is no change in expression between a particular set of genes and the rest of the genes.*
+*The peak of tests near p=0 indicates that there are some gene sets in the data with a statistically significant p-values for being overrepresented in upregulated genes. Given the large number of gene sets, some may be false positives.*
 
 ### Problem 2
 
@@ -91,7 +91,7 @@ all_tests %>%
 
 ***Of those gene sets, how many are expected to be false positives?***
 
-*Of those gene sets, less than 0.05 are expected to be false positives.*
+*Of those gene sets, since there is 186 tests and the probability of *
 
 ### Problem 3
 
@@ -116,7 +116,7 @@ all_tests %>%
 
 ***Of those gene sets, how many are expected to be false positives?***
 
-*Of these gene sets, around 5% are expected to be false postives.*
+*Of these gene sets, around $10 x 0.05 = 0.5$ are expected to be false postives using a false discovery rate.*
 
 ### Problem 4
 
