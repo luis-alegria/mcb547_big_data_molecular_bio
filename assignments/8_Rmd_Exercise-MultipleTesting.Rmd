@@ -1,7 +1,11 @@
 ---
 title: "Exercise - Multiple Hypotheses and FDR"
-output: html_document
-editor_options: 
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -10,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 We'll be working with our favorite gene expression data set again.
-First, load up the `tidyverse` and our expression data.
+First, load up the `tidyverse` liand our expression data.
 ```{r message=FALSE}
 library(tidyverse)
 load("Annotated_Results_LvV.RData")
@@ -59,6 +63,7 @@ ggplot(data=all_tests, aes(x=p.value)) +
 
 ***What does the peak of tests near p=0 indicate?***
 
+*The peak of tests near p=0 indicates that there is gene sets for which the null hypothesis can be rejected, which is that there is no change in expression between a particular set of genes and the rest of the genes.*
 
 ### Problem 2
 
@@ -69,29 +74,58 @@ all_tests <- all_tests %>% arrange(p.value)
 
 Then use mutate to add a column to all_tests called Bonferroni that represents Bonferroni-adjusted p-values. ***Show your code.***
 
-```{r echo=FALSE}
+```{r}
 all_tests <- all_tests %>% 
   mutate(bonferroni = nrow(all_tests) * p.value)
 ```
 
 ***How many gene sets are statistically significant at a Bonferroni-adjusted p-value threshold of 0.05?***
 
+```{r}
+all_tests %>% 
+  filter(bonferroni < 0.05) %>% 
+  nrow()
+```
+
+*Seven gene sets are statistically significant using a Bonferroni-adjusted p-value threshold of 0.05.*
+
 ***Of those gene sets, how many are expected to be false positives?***
 
+*Of those gene sets, less than 0.05 are expected to be false positives.*
 
 ### Problem 3
 
 ***Add a column to all_tests called `fdr` that contains Benjamini-Hochberg adjusted p-values.***
 ```{r}
-
+all_tests <- all_tests %>%
+  mutate(rank = 1:nrow(all_tests)) %>%
+  mutate(fdr = p.value * nrow(all_tests) / rank)
 ```
 
 (Hint: The expression `1:m` will create a vector of integers from `1` to `m`. You may want to create an intermediate `rank` column to help you calculate `fdr`.)
 
 ***How many genes sets are statistically significant at a false discovery rate of 0.05?***
 
+```{r}
+all_tests %>% 
+  filter(fdr < 0.05) %>% 
+  nrow()
+```
+
+*Ten gene sets are statistically significant at a false discovery rate of 0.05.*
+
 ***Of those gene sets, how many are expected to be false positives?***
+
+*Of these gene sets, around 5% are expected to be false postives.*
 
 ### Problem 4
 
 ***Print out the names of the gene sets with FDR < 0.05. Biologically, why might this set of genes be upregulated in mammary cells from lactating mice?*** (Hint: See the abstract of ref. 24 from the Fu et al. 2015 paper in the D2L Datasets folder to learn about the importance of lipids in lactation.)
+
+```{r}
+all_tests %>% 
+  filter(fdr < 0.05) %>% 
+  select(set)
+```
+
+_The names of the gene sets with FDR < 0.05 indicate that they are involved in lipid metabolism. Lipids are synthesized in large quantities in the mammary glands of lactating mice (1). Thus, biologically, gene sets involved in lipid metabolism are upregulated in lactating mice. **Source: (1) Rudolph, Michael C et al. “Metabolic regulation in the lactating mammary gland: a lipid synthesizing machine.” Physiological genomics vol. 28,3 (2007): 323-36. doi:10.1152/physiolgenomics.00020.2006**_ 
