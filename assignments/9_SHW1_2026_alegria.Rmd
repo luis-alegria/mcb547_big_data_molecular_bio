@@ -1,0 +1,286 @@
+---
+title: "Summative Homework 1 - Transcriptomics"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+The blood consists of many important cell types. Peripheral blood mononuclear cells (PBMCs) contain round nuclei and include lymphocytes - T cells, B cells, and natural killer (NK) cells - and monocytes. Cells that have multi-lobed nuclei include neutrophils, basophils, and eosinophils. Cells without nuclei include erythrocytes and platelets. These cell types are typically defined by the marker proteins expressed on their surface, but this definition can be qualitative and arbitrary. Furthermore, although the basics of hematopoiesis - or how blood cells develop (see diagram below) - are well-understood, the true relationship between cell types is highly complex and difficult to disentangle.
+
+```{r, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("Hematopoiesis_simple.svg.png")
+```
+
+(By A. Rad and M. Häggström. CC-BY-SA 3.0 license)
+
+By capturing information across the full genome, single-cell RNA-sequencing (scRNA-seq) allows us to build a more comprehensive and unbiased view of cell types and their relationships to each other. Download the data file `PBMC_scaled_variable.txt` from the D2L site, under Content->Datasets->PBMC. This dataset consists of single-cell gene expression profiles of 2,638 PBMCs extracted from normal blood. The data have been preprocessed by centering, scaling, log-transforming, and choosing the most informative genes. 
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library("tidyverse")
+pbmc.data <- read.table("PBMC_scaled_variable.txt")
+```
+
+### Problem 1
+
+Let's first apply Principal Component Analysis to visualize the dataset. The data has already been centered and scaled. 
+
+#### Problem 1.a
+
+***Use prcomp and ggplot to plot the PC1 and PC2 components of all the cells. (You only need to calculate the first 10 PCs.)*** 
+
+```{r}
+```
+
+The major cell types in this population include T cells, B cells, platelets, Natural Killer (NK) cells, dendritic cells, and monocytes. Use the marker genes provided below to color the PCA plot using a color gradient, such that high expression is lighter blue and low expression is darker blue. Below is an example code snippet for creating such a plot for the marker gene MS4A1, which indicates B cells. 
+
+```{r eval=F}
+# List of marker genes labeled by the corresponding cell type
+markers <- list(Bcell="MS4A1",Monocyte="LYZ",Platelet="PPBP",Tcell="IL7R",NK="GNLY",Dendritic="FCER1A")
+
+# Example code for plotting with a color gradient defined by expression of the B cell marker
+
+ggplot(pca.df,aes(x=PC1,y=PC2,col=pbmc.data[,markers$Bcell]))+geom_point()+scale_color_gradient(low="dark blue",high="cyan")+labs(col="B-cell")
+```
+
+```{r}
+```
+
+(Note how difficult it is to define discrete cell types using single marker genes that are expressed on a continuum.)
+
+***Color the PCA plot by each marker genes (6 plots total).***
+
+***How do PC1 and PC2 separate the samples? How does the PCA plot relate to the process of hematopoiesis shown at the top of this homework assignment? According to your PCA plot, are Natural Killer cells more similar to B cells or to T cells?***
+
+*Answer:*
+
+#### Problem 1.b
+
+***Create a scree plot. How many PCs do you think are of importance in this dataset?***
+
+```{r}
+```
+
+*Answer:*
+
+### Problem 2
+
+Now let's try using t-SNE to visualize the data. Because there is extensive DNA amplification involved in single-cell sequencing protocols, scRNA-seq data can be very noisy. Therefore, t-SNE is often run after filtering out the lowest principal components, which mostly consist of technical noise.  
+
+#### Problem 2.a
+
+***Run t-SNE on the first ten principal components (use the `x` component of your PCA result), and set perplexity to 30, theta = 0, and 2000 iterations. Make the t-SNE plot and color by each of the marker genes as before (6 total plots).***
+
+```{r warning=F, message=F, cache=T}
+```
+
+***Which cell type shows the biggest improvement in clustering and separation when compared with PCA? Show the PCA and t-SNE plots colored by the corresponding marker gene.***
+
+*Answer:*
+
+Using graph-based nearest neighbor clustering, one can robustly define cell types using the full scRNA-seq dataset (rather than with individual marker genes and arbitrary thresholds). We have provided these graph-based cell type annotations in a separate file in exactly the same order as the rows of the original data matrix. 
+
+```{r}
+pbmc.celltypes <- readLines("PBMC_CellType_Names.txt")
+names(pbmc.celltypes) <- rownames(pbmc.data)
+```
+
+#### Problem 2.b
+
+*Color your t-SNE plot by the graph-based cell type annotations.*
+
+```{r}
+```
+
+***How does the graph-based cell type annotation compare with what you saw when coloring by marker genes?*** Note that it provides distinct, well-defined cell type definitions that look cohesive on the t-SNE plot! 
+***Give one specific example of a biological conclusion you cannot draw from just looking at the t-SNE plot, and explain why.*** 
+
+*Answer:*
+
+### Problem 3
+
+Let's perform hierarchical clustering on the first 200 cells (i.e., rows of the original dataset).
+
+```{r}
+pbmc.subset <- pbmc.data[1:200,]
+```
+
+Here is a new version of the plotColoredTree function that is specifically configured for the PBMC data format. 
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(ggdendro)
+
+plotColoredTree.PBMC <- function(hc, label_vector, color_vector){
+  # Convert clusters object into a dataframe
+  hcdata<- dendro_data(hc, type="rectangle")
+  # Add additional columns used for plotting to that dataframe
+  labeldf <- data.frame(index=1:length(label_vector),newlabel=label_vector,color=color_vector,name=names(label_vector))
+  hcdata$labels <- merge(x=hcdata$labels, y=labeldf,  by.x="label", by.y="name")
+  temp <- ggplot() +
+    # Plot the tree
+    geom_segment(data=segment(hcdata), aes(x=x, y=y, xend=xend, yend=yend)) +
+    # Label the tips
+    geom_text(data=label(hcdata), aes(x=x, y=y, label=newlabel, colour = color, hjust=0), size=3) + 
+    # Additonal formatting instructions
+    coord_flip() + theme_dendro() +  scale_y_reverse(expand=c(0.2, 0))
+  print(temp)
+}
+```
+
+***Use hclust to perform hierarchical clustering with the Euclidean metric and complete linkage. Draw the resulting dendrogram and color and label the leaves by the graph-based cell type.***
+
+```{r}
+```
+
+***By looking only at the structure of the dendrogram, can you say whether Natural Killer cells are more similar to T cells or to B cells? Can you say whether FCGR3A+ monocytes or CD14+ monoctyes are more similar to Memory T cells? Explain why or why not for each.***
+
+*Answer:*
+
+### Problem 4
+
+#### Problem 4.a
+
+***Run model-based clustering on the same subsetted data comprised of the first 200 cells. Use a range of 2 to 8 clusters.***
+
+```{r}
+```
+
+***What is the optimal number of clusters, and what is the optimal model shape?***
+
+*Answer:*
+
+#### Problem 4.b
+
+***Use the clusters output by mclust to color the leaves of the dendrogram, but keep the text labels as the same cell type annotations we used before.***
+
+```{r}
+```
+
+***How would you characterize the biological difference between the model-based clusters?***
+
+*Answer:*
+
+#### Problem 4.c
+
+***Give a specific example of a biological insight you could get from studying the dendrogram, but not from model-based clustering alone.*** (For example, try comparing the dendrogram to the developmental hierarchy cartoon at the top of the assignment.)
+
+*Answer:*
+
+### Problem 5
+
+#### Problem 5.a
+
+Draw by hand a cartoon, pathway, or other visualization representing one aspect of PBMC development that interests you.
+
+```{r, eval=F, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("IMG_9607.jpg")
+```
+
+#### Problem 5.b
+
+In 5-6 sentences: First, explain how your own research, job, coursework, or other personal experience led you to choose this aspect of PBMCs. Second, describe how a data analysis technique from this class could be applied to further understand the topic you chose. 
+
+*Answer:*
+
+### Problem 6
+
+To better understand the neurobiological basis of heroin addiction, the Hurd Lab used microarrays to measure gene expression in the nucleus accumbens of deceased heroin users and control individuals. The nucleus accumbens is a brain region that plays a central role in the regulation of reward, emotion, motivation and goal-directed behavior. 
+
+#### Problem 6.a
+
+Our first step is to get the data. First, go to the [appropriate GEO entry](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE87823).
+Conveniently, GEO provides a nice service to preprocess the data. To access it, click on the link for ``Analyze with GEO2R''.
+
+To run the analysis, you'll first need to define two groups to assign samples to.
+To do so, click on the little link for "Define Groups", which will drop down a small menu.
+To create the group "heroin", type "heroin" into the text box and hit enter.
+Then do the same for the group "control".
+(Note: For this homework it is important that you create the groups in this order, so that logFC > 0 means upregulated in heroin user samples.)
+To assign samples to the heroin group, select the corresponding 22 samples then click the "heroin" location in the "Define groups" drop down.
+(Note: You can shift-click on the sample list to select multiple samples at once.)
+Next, assign the remaining 27 samples to the control group.
+Lastly, scroll down on the page and click the "Analyze" button.
+
+Once the analysis results appear, you'll see a sorted list of genes with their expression difference between heroin vs control.
+
+**Can you interpret any biology of heroin addiction from the top differentially expressed genes?**
+
+*Answer:*
+
+Click on the "Download full table" link, which will save a file called `GSE87823.top.table.tsv` to your computer after a few seconds. Move that file into whichever directory you choose to complete your exercise in.
+
+<!--I downloaded the [Hurd lab data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE87823) and processed it GEO2R to get a table of differentially expressed genes. You can download the data from our d2l site, under Content -> Datasets -> HurdHeroinGeneExpression -> GSE87823.top.table.tsv.-->
+
+#### Problem 6.b
+
+Now load the data
+```{r eval=F}
+tib <- read_tsv('GSE87823.top.table.tsv')
+```
+
+***Now add a column to `tib` called `upregulated` that records whether a gene showed a positive fold-change and a p-value of less than 0.05.***
+
+```{r}
+```
+
+***Based on this criterion, what fraction of measured genes are upregulated?***
+
+*Answer:*
+
+#### Problem 6.c
+
+***Make a volcano plot of these data, colored by whether or not a gene is upregulated.***
+```{r}
+```
+
+#### Problem 6.d
+
+To make sense of these data, we'll look for enrichment in gene sets defined by the [Human Phenotype Ontology](https://hpo.jax.org/). I downloaded the gene sets from the [Molecular Signatures Database](https://www.gsea-msigdb.org/gsea/msigdb/) and processed them into an R list of character vectors for easy loading. You can download the processed gene sets from d2l -> Content -> Datasets -> HurdHeroinGeneExpression.
+```{r eval=F}
+db <- readRDS('c5.hpo.v7.4.symbols.rds')
+```
+
+We'll define a function to calculate the p-value for Fisher's Exact Test to test for enrichment of a gene set in the upregulated genes. (Note that you may need to change some variable names from our previous function.) In the code below `gs` will be the name of the gene set we're testing.
+
+```{r eval=F}
+enrichment_pval <- function(gs) {
+  ul <- tib %>% filter((Gene.symbol %in% db[[gs]]) & upregulated) %>% nrow()
+  ur <- tib %>% filter((Gene.symbol %in% db[[gs]]) & !upregulated) %>% nrow()
+  ll <- tib %>% filter(!(Gene.symbol %in% db[[gs]]) & upregulated) %>% nrow()
+  lr <- tib %>% filter(!(Gene.symbol %in% db[[gs]]) & !upregulated) %>% nrow()
+  table <- matrix(c(ul,ll,ur,lr), nrow=2)
+  # The return value from our function is the result of the last line in it
+  fisher.test(table,alternative="greater")$p.value
+}
+```
+
+Then we can use `map_dbl` to apply this function to all gene sets. (This may take a couple of minutes.)
+
+```{r eval=F, cache=TRUE}
+all_pvals <- map_dbl(names(db), enrichment_pval)
+all_tests <- tibble(set=names(db), p.value=all_pvals)
+all_tests <- all_tests %>% arrange(p.value)
+```
+
+**Which gene set has the most significant p-value?**
+
+*Answer:*
+
+#### Problem 6.e
+
+Here we add a column to your tibble that contains Benjamini-Hochberg adjusted p-values.
+```{r eval=F}
+m <- nrow(all_tests)
+all_tests <- all_tests %>% mutate(fdr=p.value*m/1:m)
+``` 
+
+***At a False Discovery Rate of 5%, how many gene sets are enriched in the heroin users?***
+
+*Answer:*
+
+#### Problem 6.f
+
+Examine the 20 gene sets with the most significant enrichment. 
+
+***Do you see any patterns among these gene sets? How might they relate to the neurobiology of heroin usage?***
+
+*Answer:*
