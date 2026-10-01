@@ -63,7 +63,7 @@ ggplot(data=all_tests, aes(x=p.value)) +
 
 ***What does the peak of tests near p=0 indicate?***
 
-*The peak of tests near p=0 indicates that there are some gene sets in the data with a statistically significant p-values for being overrepresented in upregulated genes. Given the large number of gene sets, some may be false positives.*
+*The peak of tests near p=0 indicates that some gene sets in the data have statistically significant p-values (<0.05) for being overrepresented in upregulated genes. Given the large number of gene sets, some may be false positives.*
 
 ### Problem 2
 
@@ -91,7 +91,7 @@ all_tests %>%
 
 ***Of those gene sets, how many are expected to be false positives?***
 
-*Of those gene sets, since there is 186 tests and the probability of *
+*Of those gene sets, since there is 186 tests and since $alpha = 0.05$, the expected number of false positives is $$186 \times \frac{0.05}{186} = 0.05.$$*
 
 ### Problem 3
 
@@ -116,7 +116,7 @@ all_tests %>%
 
 ***Of those gene sets, how many are expected to be false positives?***
 
-*Of these gene sets, around $10 x 0.05 = 0.5$ are expected to be false postives using a false discovery rate.*
+*Of these gene sets, $10 \times 0.05 = 0.5$ are expected to be false positives using a false discovery rate.*
 
 ### Problem 4
 
@@ -128,4 +128,4 @@ all_tests %>%
   select(set)
 ```
 
-_The names of the gene sets with FDR < 0.05 indicate that they are involved in lipid metabolism. Lipids are synthesized in large quantities in the mammary glands of lactating mice (1). Thus, biologically, gene sets involved in lipid metabolism are upregulated in lactating mice. **Source: (1) Rudolph, Michael C et al. “Metabolic regulation in the lactating mammary gland: a lipid synthesizing machine.” Physiological genomics vol. 28,3 (2007): 323-36. doi:10.1152/physiolgenomics.00020.2006**_ 
+_Gene sets with FDR < 0.05 indicate involvement in lipid metabolism. Mammary glands in lactating mice synthesize lipids in large quantities (1). Thus, biologically, gene sets involved in lipid metabolism are upregulated in lactating mice. **Source: (1) Rudolph, Michael C et al. “Metabolic regulation in the lactating mammary gland: a lipid synthesizing machine.” Physiological genomics vol. 28,3 (2007): 323-36. doi:10.1152/physiolgenomics.00020.2006**_ 
