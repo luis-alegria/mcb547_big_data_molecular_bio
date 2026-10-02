@@ -18,6 +18,7 @@ knitr::include_graphics("Hematopoiesis_simple.png")
 By capturing information across the full genome, single-cell RNA-sequencing (scRNA-seq) allows us to build a more comprehensive and unbiased view of cell types and their relationships to each other. Download the data file `PBMC_scaled_variable.txt` from the D2L site, under Content->Datasets->PBMC. This dataset consists of single-cell gene expression profiles of 2,638 PBMCs extracted from normal blood. The data have been preprocessed by centering, scaling, log-transforming, and choosing the most informative genes. 
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
+library("patchwork")
 library("tidyverse")
 pbmc.data <- read.table("PBMC_scaled_variable.txt")
 ```
@@ -31,7 +32,7 @@ Let's first apply Principal Component Analysis to visualize the dataset. The dat
 ***Use prcomp and ggplot to plot the PC1 and PC2 components of all the cells. (You only need to calculate the first 10 PCs.)*** 
 
 ```{r}
-# Already pre-processed, with 10 PCs
+# Already pre-processed, only first 10 PCs
 cells_pca <- prcomp(pbmc.data, 
                     center = FALSE, 
                     scale. = FALSE,
@@ -46,7 +47,11 @@ markers <- list(Bcell="MS4A1",Monocyte="LYZ",Platelet="PPBP",Tcell="IL7R",NK="GN
 
 # Example code for plotting with a color gradient defined by expression of the B cell marker
 
-ggplot(pca.df,aes(x=PC1,y=PC2,col=pbmc.data[,markers$Bcell]))+geom_point()+scale_color_gradient(low="dark blue",high="cyan")+labs(col="B-cell")
+#pca.df
+ggplot(cells_pca$x,aes(x=PC1,y=PC2,col=pbmc.data[,markers$Bcell])) +
+  geom_point() +
+  scale_color_gradient(low="dark blue",high="cyan") +
+  labs(col="B-cell")
 ```
 
 ```{r}
@@ -56,9 +61,39 @@ ggplot(pca.df,aes(x=PC1,y=PC2,col=pbmc.data[,markers$Bcell]))+geom_point()+scale
 
 ***Color the PCA plot by each marker genes (6 plots total).***
 
+```{r}
+# Define function to create plot
+plot_pcaexp <- function(pca, data, marker_gene, cell_type){
+  #combine first two PCAs and expression into one df
+  plotting_data <- cbind(as.data.frame(pca$x[, c("PC1", "PC2")]),
+                         expression = data[, marker_gene])
+  #create plot
+  ggplot(plotting_data, aes(x = PC1, y = PC2, col = expression)) +
+    geom_point(size = 0.5, alpha = 0.5) +
+    scale_color_gradient(low="dark blue",high="cyan") +
+    labs(col = cell_type)
+}
+```
+
+```{r}
+#make plots
+bcell <- plot_pcaexp(cells_pca, pbmc.data, "MS4A1", "B-cell")
+monos <- plot_pcaexp(cells_pca, pbmc.data, "LYZ", "Monocyte")
+plates <- plot_pcaexp(cells_pca, pbmc.data, "PPBP", "Platelet")
+tcell <- plot_pcaexp(cells_pca, pbmc.data, "IL7R", "T-cell")
+nkcell <- plot_pcaexp(cells_pca, pbmc.data, "GNLY", "NK cell")
+dendros <- plot_pcaexp(cells_pca, pbmc.data, "FCER1A", "Dendritic cell")
+```
+
+```{r}
+#display plots
+wrap_plots(bcell, nkcell, tcell, monos, plates, dendros, ncol = 3)
+```
+
+
 ***How do PC1 and PC2 separate the samples? How does the PCA plot relate to the process of hematopoiesis shown at the top of this homework assignment? According to your PCA plot, are Natural Killer cells more similar to B cells or to T cells?***
 
-*Answer:*
+*Answer: Based on the plots, PC1 and PC2 appear to be separating the samples on blood cell type and more generally on whether the cells originate from a common lymphoid progenitor (CLP) and common myeloid progenitor (CMP). The hematopoiesis figure at the top, shows that NK, B, and T cells originate from CLPs and platelets and monocytes from CMPs. Dendritic cells, not in the figure, originate from CMPs? And this relates to the figure are PC1 appears to be separating cells from CMPs and PC2 from CLPs. According to the PCA plot, NK cells are more similar to T-cells as there is some overlapping areas of color between the two plots.*
 
 #### Problem 1.b
 
