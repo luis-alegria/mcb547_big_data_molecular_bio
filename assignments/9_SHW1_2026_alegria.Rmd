@@ -54,9 +54,6 @@ ggplot(cells_pca$x,aes(x=PC1,y=PC2,col=pbmc.data[,markers$Bcell])) +
   labs(col="B-cell")
 ```
 
-```{r}
-```
-
 (Note how difficult it is to define discrete cell types using single marker genes that are expressed on a continuum.)
 
 ***Color the PCA plot by each marker genes (6 plots total).***
@@ -100,7 +97,9 @@ wrap_plots(bcell, nkcell, tcell, monos, plates, dendros, ncol = 3)
 ***Create a scree plot. How many PCs do you think are of importance in this dataset?***
 
 ```{r}
+screeplot(cells_pca, npcs = 10, type = "barplot")
 ```
+
 
 *Answer:*
 
