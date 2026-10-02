@@ -1,5 +1,7 @@
 ---
 title: "Summative Homework 1 - Transcriptomics"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -8,7 +10,7 @@ editor_options:
 The blood consists of many important cell types. Peripheral blood mononuclear cells (PBMCs) contain round nuclei and include lymphocytes - T cells, B cells, and natural killer (NK) cells - and monocytes. Cells that have multi-lobed nuclei include neutrophils, basophils, and eosinophils. Cells without nuclei include erythrocytes and platelets. These cell types are typically defined by the marker proteins expressed on their surface, but this definition can be qualitative and arbitrary. Furthermore, although the basics of hematopoiesis - or how blood cells develop (see diagram below) - are well-understood, the true relationship between cell types is highly complex and difficult to disentangle.
 
 ```{r, echo = FALSE, out.width = "600px"}
-knitr::include_graphics("Hematopoiesis_simple.svg.png")
+knitr::include_graphics("Hematopoiesis_simple.png")
 ```
 
 (By A. Rad and M. Häggström. CC-BY-SA 3.0 license)
@@ -29,6 +31,11 @@ Let's first apply Principal Component Analysis to visualize the dataset. The dat
 ***Use prcomp and ggplot to plot the PC1 and PC2 components of all the cells. (You only need to calculate the first 10 PCs.)*** 
 
 ```{r}
+# Already pre-processed, with 10 PCs
+cells_pca <- prcomp(pbmc.data, 
+                    center = FALSE, 
+                    scale. = FALSE,
+                    rank. = 10)
 ```
 
 The major cell types in this population include T cells, B cells, platelets, Natural Killer (NK) cells, dendritic cells, and monocytes. Use the marker genes provided below to color the PCA plot using a color gradient, such that high expression is lighter blue and low expression is darker blue. Below is an example code snippet for creating such a plot for the marker gene MS4A1, which indicates B cells. 

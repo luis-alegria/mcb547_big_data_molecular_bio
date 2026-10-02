@@ -51,7 +51,7 @@ rsconnect/
 #macOS creation
 .DS_Store
 
-#knitted pdfs or jpegmaf or html or csv or RData or rds or png
+#knitted pdfs or jpegmaf or html or csv or RData or rds or png or txt
 *.pdf
 *.jpg
 *.html
@@ -59,3 +59,4 @@ rsconnect/
 *.RData
 *.rds
 *.png
+*.txt
