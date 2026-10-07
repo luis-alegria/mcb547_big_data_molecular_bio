@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Human kNN and Cross-validation"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -55,7 +57,7 @@ performance(knnPred)
 
 **What mmce do you find?**
 
-*Answer:*
+*Answer:The mean misclassfication error is 0.1869919.*
 
 ### Problem 1.b
 
@@ -67,16 +69,22 @@ calculateConfusionMatrix(knnPred, relative=TRUE)
 
 **Based on these results, individuals from which region are most difficult to classify? How does this compare with the visualization of these data by PCA (see previous solutions)?**
 
-*Answer: *
+*Answer: Based on the results, individuals from the Middle East are more difficult to classify as about $78/158 or about 49.4%$ were misclassified. Looking at the PCA plot on D2L, individuals from the Middle East, overlap with African, Europe, and Central South Asia populations indicating individuals from the Middle East may be difficult to classify.*
 
 ### Problem 1.c
 
 **Rerun your analysis from Problem 1.a, but now with k=1. What do you obtain for your mmce? Why do you get this value?**
 
 ```{r}
+task <- makeClassifTask(data=data, target="region")
+knn <- makeLearner("classif.knn", par.vals = list("k"=1))
+knnModel <- train(knn, task)
+
+knnPred <- predict(knnModel, newdata=data)
+performance(knnPred)
 ```
 
-*Answer: *
+*Answer: The mean misclassfication error with k=1 is 0. When making a prediction, the algorithm calculates distances to all points and ranks them. One of those distances, since training and testing set is the same, is from a point to itself and is zero. Since k=1, the points receive the same classification it had in the training set and MMCE is 0.*
 
 ## Problem 2
 
