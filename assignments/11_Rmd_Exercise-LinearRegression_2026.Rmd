@@ -1,0 +1,130 @@
+---
+title: "Exercise - Linear Regression"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Today we'll be working with data from Csárdi et al. on the relationship between protein and RNA levels in yeast <https://doi.org/10.1371/journal.pgen.1005206>.
+We'll build a linear model to examine the relationship quantitatively.
+
+First, we load `tidyverse` and `mlr`.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(mlr)
+```
+
+Download the data file from Content -> Datasets -> ProteinRNAlevels. It's stored in tab-separated-value format, with comment lines that begin with `#`, so we use the following function to read it in. We will keep the mRNA and protein level measurements and remove any observations with NAs.
+```{r message=FALSE}
+df <- read_tsv("scer-mrna-protein-absolute-estimate-sample.txt", comment="#")
+df <- df %>% select("mrna","prot") %>% drop_na()
+```
+
+### Problem 1
+
+Make a point plot of protein levels versus mRNA levels.
+
+***Is a relationship evident from this plot?***
+
+(Hint: Using `head(df)` will show you the first few rows of the dataframe.)
+
+```{r}
+
+```
+
+### Problem 2
+
+Your plot isn't very informative, because protein and mRNA levels span several orders of magnitude. To visualize such data, it's best to take the log of the data.
+
+Mutate your data frame to add a columns `logprot` and `logmrna` that contain the `log10` of the protein and mRNA levels.
+Then make a point plot of `logprot` versus `logmrna`.
+
+```{r}
+
+```
+
+***What relationship is evident from this plot?***
+
+### Problem 3: Whiteboard question
+
+Now we'll fit our linear model, using the `lm` function. The syntax below says that the variable `logprot` depends linearly on the variable `logmrna`. (R automatically adds an intercept term to the model.)
+```{r}
+mod <- lm(logprot ~ logmrna, data=df)
+```
+
+To see details about the fit, use
+```{r}
+summary(mod)
+```
+
+***What is the estimated slope of the relationship? Is it significantly different from 1? How can you tell? (Hint: use a 95% confidence interval) What does that mean about the relationship between mRNA and protein levels?*** Insert a photo of your work here.
+
+```{r, eval=F, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("YourDrawing.jpg")
+```
+
+
+### Problem 4
+
+To examine the linear fit in more detail, we'll carry out the same linear regression using the `mlr` package. The following code will allow you to create the task with `logprot` as the target, make a univariate regression learner using `regr.lm`, and train the model on the task.
+
+```{r}
+df_mlr <- df %>% select(starts_with("log"))
+rnaTask <- makeRegrTask(data = df_mlr, target = "logprot")
+lmLearner <- makeLearner("regr.lm",predict.type="se")
+lmrna <- train(lmLearner, rnaTask)
+```
+
+Next, we want to plot model predictions on the same plot as the data.
+First, let's calculate the predictions. We will create a grid of equally spaced logmrna values, make predictions using the previously determined linear model, and place the values into a new data frame called `grid`. 
+```{r}
+x_grid <- data.frame(logmrna=seq(from=min(df$logmrna),to=max(df$logmrna),length.out=100))
+y_grid <- predict(lmrna, newdata=x_grid)
+grid <- data.frame(logmrna=x_grid,pred=y_grid$data$response)
+```
+
+Make a point plot of `logprot` vs `logmrna` with a red line showing the model predictions.
+```{r}
+
+```
+
+(Hint: For the line, use `geom_line` and the `grid` data frame.)
+
+***Visually, how well does a line fit these data?***
+
+### Problem 5
+
+As a more sensitive visual test, we can plot the residuals.
+To calculate them, use `residuals(mod)` and create a new `resid` column in our data frame.
+```{r}
+df <- df %>% mutate(resid=residuals(mod))
+```
+
+***Why do we create a new data frame for the model predictions, but add the residuals to the original data frame?***
+
+Now make a point plot of the residuals versus `logmrna`.
+```{r}
+
+```
+
+***From the residual plot, what can we conclude about the fit of our model to the data?***
+
+### Problem 6
+
+Recall from class that $r^2$ quantifies how much of the variance in the data is accounted for by our model. We can access it from our model output using
+```{r}
+summary(mod)$r.squared
+```
+And also recall that we expect $r^2$ from the linear model to be equal to the square of the Pearson correlation coefficient.
+You can calculate the Pearson correlation coefficient using the following.
+```{r}
+cor(df$logmrna, df$logprot)
+```
+
+***Do our two methods of calculating $r^2$ agree?***
+
+### No personal reflection
