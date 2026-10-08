@@ -99,7 +99,7 @@ holdoutCV$aggr
 
 **What do you obtain for your final mmce estimate? How does it compare to your previous analysis of testing directly on the training data? What does this tell you about your performance measurement from Problem 1.a?**
 
-*Answer: *
+*Answer: The final mmce estimate with k=5 and 5-fold cross validation, is 0.293. In the previous problem the mmce is lower at 0.187. Since in the previous problem testing occurred on the training data, evaluation bias was introduced and model performance was overestimated.*
 
 ## Problem 3
 
@@ -121,7 +121,7 @@ plotHyperParsEffect(knnTuningData, x="k", y="mmce.test.mean")
 
 **What is your optimal value for k?**
 
-*Answer: *
+*Answer: The optimal value for k appears to be k=8.*
 
 **Compare your tuning plot with someone else in the course. How are your plots similar or different? Where do you think the differences come from?**
 
@@ -131,7 +131,7 @@ plotHyperParsEffect(knnTuningData, x="k", y="mmce.test.mean")
 
 **Is the mmce from the optimal value of k found in Problem 3 an unbiased estimate of our final model performance? Why or why not?**
 
-*Answer: *
+*Answer: The optimal value of k in problem 3 is not unbiased since a test data set was not created before starting hyperparameter tuning. Since performance is is not being measured on an independent data set, evaluation bias is introduced.*
 
 **Make a diagram of the full setup, including 5-fold cross-validation and holdout data similar to the block diagrams we used in the lecture, that you should use to get an unbiased estimate of final model performance.***
 
