@@ -20,6 +20,8 @@ By capturing information across the full genome, single-cell RNA-sequencing (scR
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 library("patchwork")
 library("tidyverse")
+library("Rtsne")
+library("mclust")
 pbmc.data <- read.table("PBMC_scaled_variable.txt")
 ```
 
@@ -128,11 +130,55 @@ Now let's try using t-SNE to visualize the data. Because there is extensive DNA 
 ***Run t-SNE on the first ten principal components (use the `x` component of your PCA result), and set perplexity to 30, theta = 0, and 2000 iterations. Make the t-SNE plot and color by each of the marker genes as before (6 total plots).***
 
 ```{r warning=F, message=F, cache=T}
+#run t-SNE
+set.seed(42)
+cell_tsne <- Rtsne(
+  cells_pca$x,
+  dims = 2,
+  perplexity = 30,
+  theta = 0,
+  max_iter = 2000,
+  verbose = FALSE
+)
 ```
+
+```{r}
+#define function to make t-sne plots
+plot_tsneexp <- function(tsne, data, marker_gene, cell_type){
+  
+  plotting_data <- data.frame(
+    Dim1 = cell_tsne$Y[, 1],
+    Dim2 = cell_tsne$Y[, 2],
+    expression = data[, marker_gene]
+  )
+  
+  #create plot
+  ggplot(plotting_data, aes(x = Dim1, y = Dim2, col = expression)) +
+    geom_point(size = 0.5, alpha = 0.5) +
+    scale_color_gradient(low="dark blue",high="cyan") +
+    labs(x = "t-SNE 1", y = "t-SNE 2", col = cell_type)
+}
+```
+
+```{r}
+#make plots
+bcell <- plot_tsneexp(cells_tsne, pbmc.data, "MS4A1", "B-cell")
+monos <- plot_tsneexp(cells_tsne, pbmc.data, "LYZ", "Monocyte")
+plates <- plot_tsneexp(cells_tsne, pbmc.data, "PPBP", "Platelet")
+tcell <- plot_tsneexp(cells_tsne, pbmc.data, "IL7R", "T-cell")
+nkcell <- plot_tsneexp(cells_tsne, pbmc.data, "GNLY", "NK cell")
+dendros <- plot_tsneexp(cells_tsne, pbmc.data, "FCER1A", "Dendritic cell")
+```
+
+```{r}
+#display plots
+wrap_plots(bcell, nkcell, tcell, monos, plates, dendros, ncol = 3)
+```
+
 
 ***Which cell type shows the biggest improvement in clustering and separation when compared with PCA? Show the PCA and t-SNE plots colored by the corresponding marker gene.***
 
-*Answer:*
+*Answer: Platelets?*
 
 Using graph-based nearest neighbor clustering, one can robustly define cell types using the full scRNA-seq dataset (rather than with individual marker genes and arbitrary thresholds). We have provided these graph-based cell type annotations in a separate file in exactly the same order as the rows of the original data matrix. 
 
@@ -146,6 +192,16 @@ names(pbmc.celltypes) <- rownames(pbmc.data)
 *Color your t-SNE plot by the graph-based cell type annotations.*
 
 ```{r}
+graph_data <- data.frame(
+  Dim1 = cell_tsne$Y[, 1],
+  Dim2 = cell_tsne$Y[, 2],
+  annotations = pbmc.celltypes
+)
+
+ ggplot(graph_data, aes(x = Dim1, y = Dim2, col = annotations)) +
+    geom_point(size = 0.5, alpha = 0.5) +
+    # scale_color_gradient(low="dark blue",high="cyan") +
+    labs(x = "t-SNE 1", y = "t-SNE 2", col = "Cell Type")
 ```
 
 ***How does the graph-based cell type annotation compare with what you saw when coloring by marker genes?*** Note that it provides distinct, well-defined cell type definitions that look cohesive on the t-SNE plot! 
@@ -186,11 +242,23 @@ plotColoredTree.PBMC <- function(hc, label_vector, color_vector){
 ***Use hclust to perform hierarchical clustering with the Euclidean metric and complete linkage. Draw the resulting dendrogram and color and label the leaves by the graph-based cell type.***
 
 ```{r}
+dists_sub <- dist(pbmc.subset, method = "euclidean")
+
+hier_clust <- hclust(
+  dists_sub,
+  method = "complete"
+)
+
+plotColoredTree.PBMC(
+  hier_clust, 
+  pbmc.celltypes[1:200], 
+  pbmc.celltypes[1:200]
+)
 ```
 
 ***By looking only at the structure of the dendrogram, can you say whether Natural Killer cells are more similar to T cells or to B cells? Can you say whether FCGR3A+ monocytes or CD14+ monoctyes are more similar to Memory T cells? Explain why or why not for each.***
 
-*Answer:*
+*Answer:By looking at the structure of the dendogram, it cannot be said whether NK cells are more similar to T or B cells. The branches for these three cell types join at the second node. Yes for whether Memory T cells being more similar FCGR3A+ monocytes or CD14+ monoctyes. More similar to FCGR3A+ monocytes since they branch at a node lower on the tree when compared to CD14+ monoctyes.*
 
 ### Problem 4
 
@@ -199,28 +267,36 @@ plotColoredTree.PBMC <- function(hc, label_vector, color_vector){
 ***Run model-based clustering on the same subsetted data comprised of the first 200 cells. Use a range of 2 to 8 clusters.***
 
 ```{r}
+model_clust <- Mclust(pbmc.subset, G = 2:8)
+
+model_clust$BIC
 ```
 
 ***What is the optimal number of clusters, and what is the optimal model shape?***
 
-*Answer:*
+*Answer: Based on BIC, the optimal number of cluster is two and optimal model shape is VEI (diagonal, varying volume, equal shape).*
 
 #### Problem 4.b
 
 ***Use the clusters output by mclust to color the leaves of the dendrogram, but keep the text labels as the same cell type annotations we used before.***
 
 ```{r}
+plotColoredTree.PBMC(
+  hier_clust, 
+  pbmc.celltypes[1:200], 
+  as.factor(model_clust$classification)
+)
 ```
 
 ***How would you characterize the biological difference between the model-based clusters?***
 
-*Answer:*
+*Answer:The biological difference between model-based clusters can characterized as one cluster (Monocytes) originating from common myeloid progenitors and the second cluster (Mostly lymphoid, some Monos) primarily originating from lymphoid progenitors *
 
 #### Problem 4.c
 
 ***Give a specific example of a biological insight you could get from studying the dendrogram, but not from model-based clustering alone.*** (For example, try comparing the dendrogram to the developmental hierarchy cartoon at the top of the assignment.)
 
-*Answer:*
+*Answer: B cells more similar to memory t-cell than naive? *
 
 ### Problem 5
 
