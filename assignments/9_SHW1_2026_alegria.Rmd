@@ -353,16 +353,24 @@ tib <- read_tsv('GSE87823.top.table.tsv')
 ***Now add a column to `tib` called `upregulated` that records whether a gene showed a positive fold-change and a p-value of less than 0.05.***
 
 ```{r}
+tib <- tib %>% 
+  mutate(upregulated = if_else(logFC > 0 & P.Value < 0.05, TRUE, FALSE))
+
+paste("Upregulated fraction:", 
+      round(sum(tib$upregulated) / nrow(tib), 3))
 ```
 
 ***Based on this criterion, what fraction of measured genes are upregulated?***
 
-*Answer:*
+*Answer: Based on the criteria, 0.081 or 8.1% of genes are upregulated.*
 
 #### Problem 6.c
 
 ***Make a volcano plot of these data, colored by whether or not a gene is upregulated.***
 ```{r}
+ggplot(data = tib, 
+       aes(x = logFC, y = -log10(P.Value), colour = upregulated)) +
+  geom_point()
 ```
 
 #### Problem 6.d
@@ -396,7 +404,11 @@ all_tests <- all_tests %>% arrange(p.value)
 
 **Which gene set has the most significant p-value?**
 
-*Answer:*
+```{r}
+all_tests[1,]
+```
+
+*Answer: The most significant gene set is HP_AUTISTIC_BEHAVIOR with a p-value of 2.72e-14.*
 
 #### Problem 6.e
 
@@ -408,12 +420,22 @@ all_tests <- all_tests %>% mutate(fdr=p.value*m/1:m)
 
 ***At a False Discovery Rate of 5%, how many gene sets are enriched in the heroin users?***
 
-*Answer:*
+```{r}
+#enriched
+sum(all_tests$fdr < 0.05)
+```
+
+*Answer: At a False Discovery Rate of 5%, 298 gene sets are enriched.*
 
 #### Problem 6.f
 
-Examine the 20 gene sets with the most significant enrichment. 
+Examine the 20 gene sets with the most significant enrichment.
+
+```{r}
+head(all_tests$set, 20)
+```
+
 
 ***Do you see any patterns among these gene sets? How might they relate to the neurobiology of heroin usage?***
 
-*Answer:*
+*Answer: The 20 gene sets with most with most significant enrichment seemed to be associated with autism, attention deficit hyperactive disorder and their associated behaviors. In addition, there are gene sets for abnormal formation of body structures (e.g., palpebral fissures, nasal tip, and nasal bridge). It ...*
