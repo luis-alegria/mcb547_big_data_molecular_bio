@@ -2,7 +2,9 @@
 title: "Exercise - Human kNN and Cross-validation"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 Today, we'll be applying a k Nearest Neighbors (kNN) classification model to our human population genetic data. We'll also be exploring various procedures for assessing performance.
@@ -12,11 +14,12 @@ First, load our libraries, including the Machine Learning library `mlr`. (If you
 ```{r message=FALSE}
 library("tidyverse")
 library("mlr")
+set.seed(42)
 ```
 
 Now load the genetic data data and rescale as before.
 
-```{r, eval=F}
+```{r}
 data <- read.csv("phased_HGDP+India+Africa_2810SNPs-regions1to36.csv")
 data[8:ncol(data)] <- data %>% select(starts_with("rs")) %>% scale()
 data[is.na(data)] <- 0
@@ -24,13 +27,13 @@ data[is.na(data)] <- 0
 
 We'll be using these data to predict the region individuals are from, so we keep only the `region` column and the columns containing genetic information.
 
-```{r, eval=F}
+```{r}
 data <- data %>% select(c("region", starts_with("rs")))
 ```
 
 As you'll see, the kNN model can be slow, so we'll restrict our analysis to 500 SNPs, to make each calculation faster.
 
-```{r, eval=F}
+```{r}
 data <- data %>% select(1:501)
 ```
 
@@ -42,7 +45,7 @@ First, we'll consider what happens when we train on all the data and evaluate pe
 
 We'll train a kNN model with k=5 using all the data, and store the result in a variable called `knnModel`.
 
-```{r, eval=F}
+```{r}
 task <- makeClassifTask(data=data, target="region")
 knn <- makeLearner("classif.knn", par.vals = list("k"=5))
 knnModel <- train(knn, task)
@@ -50,26 +53,26 @@ knnModel <- train(knn, task)
 
 We can then use that model to predict `region` from the same training data and evaluate performance.
 
-```{r, eval=F}
+```{r}
 knnPred <- predict(knnModel, newdata=data)
 performance(knnPred)
 ```
 
 **What mmce do you find?**
 
-*Answer:The mean misclassfication error is 0.1869919.*
+*Answer: The mean misclassfication error is 0.1933153.*
 
 ### Problem 1.b
 
 In classification problems, the confusion matrix can be very helpful for understanding performance. We can calculate one using this command.
 
-```{r, eval=F}
+```{r}
 calculateConfusionMatrix(knnPred, relative=TRUE)
 ```
 
 **Based on these results, individuals from which region are most difficult to classify? How does this compare with the visualization of these data by PCA (see previous solutions)?**
 
-*Answer: Based on the results, individuals from the Middle East are more difficult to classify as about $78/158 or about 49.4%$ were misclassified. Looking at the PCA plot on D2L, individuals from the Middle East, overlap with African, Europe, and Central South Asia populations indicating individuals from the Middle East may be difficult to classify.*
+*Answer: Based on the results, individuals from the Middle East are more difficult to classify as about $79/158$ or about 50% were misclassified. Looking at the PCA plot on D2L, individuals from the Middle East, overlap with African, Europe, and Central South Asia populations indicating individuals from the Middle East may be difficult to classify.*
 
 ### Problem 1.c
 
@@ -84,59 +87,65 @@ knnPred <- predict(knnModel, newdata=data)
 performance(knnPred)
 ```
 
-*Answer: The mean misclassfication error with k=1 is 0. When making a prediction, the algorithm calculates distances to all points and ranks them. One of those distances, since training and testing set is the same, is from a point to itself and is zero. Since k=1, the points receive the same classification it had in the training set and MMCE is 0.*
+*Answer: The mean misclassification error with k=1 is 0. When making a prediction, kNN calculates distances to all training points and ranks them. One of those distances is zero because the training and testing sets are the same, so one point is compared to itself. Since k=1, the point receives the same classification as the training set, and MMCE is 0.*
 
 ## Problem 2
 
 Now we'll retrain our kNN model with k=5, but now use 5-fold cross validation, repeated 5 times. 
 
-```{r, eval=F}
+```{r, results = 'hide'}
 knn <- makeLearner("classif.knn", par.vals = list("k"=5))
 kFold <- makeResampleDesc(method="RepCV", folds=5, reps=5, stratify=TRUE)
 holdoutCV <- resample(learner=knn, task=task, resampling=kFold)
+```
+```{r}
 holdoutCV$aggr
 ```
 
 **What do you obtain for your final mmce estimate? How does it compare to your previous analysis of testing directly on the training data? What does this tell you about your performance measurement from Problem 1.a?**
 
-*Answer: The final mmce estimate with k=5 and 5-fold cross validation, is 0.293. In the previous problem the mmce is lower at 0.187. Since in the previous problem testing occurred on the training data, evaluation bias was introduced and model performance was overestimated.*
+*Answer: The final mmce estimate with k=5 and 5-fold cross-validation is 0.2973768. In the previous problem, the mmce was lower at 0.1933153. Since problem 1.a tested on the training data, it introduced evaluation bias and overestimated model performance.*
 
 ## Problem 3
 
 Now let's tune the kNN parameter k. For each value of k, we'll run 5 repetitions of 5-fold cross validation.
 
-```{r, eval=F}
+```{r, results = 'hide'}
 knnParamSpace <- makeParamSet(makeDiscreteLearnerParam("k", values=seq(2,40,3)))
 gridSearch <- makeTuneControlGrid()
 cvForTuning <- makeResampleDesc("RepCV", folds=5, reps=5)
-tunedK <- tuneParams("classif.knn", task=task, resampling=cvForTuning, par.set=knnParamSpace, control=gridSearch)
+tunedK <- tuneParams("classif.knn", 
+                     task=task, 
+                     resampling=cvForTuning, 
+                     par.set=knnParamSpace, 
+                     control=gridSearch)
 ```
 
 And let's plot the results of the tuning.
 
-```{r, eval=F}
+```{r}
 knnTuningData <- generateHyperParsEffectData(tunedK)
 plotHyperParsEffect(knnTuningData, x="k", y="mmce.test.mean")
 ```
 
 **What is your optimal value for k?**
 
-*Answer: The optimal value for k appears to be k=8.*
+*Answer: The optimal value for k appears to be k=11.*
 
 **Compare your tuning plot with someone else in the course. How are your plots similar or different? Where do you think the differences come from?**
 
-*Answer: I compared with Lexi Deford. Our plots are different as the their min is at k=8 and mine is at k=11. Differences in the folds are creating the differences.*
+*Answer: I compared with Lexi Deford. Our plots both have their minimum at k=11. Differences in fold creation would create the different minima.*
 
 ## Problem 4
 
 **Is the mmce from the optimal value of k found in Problem 3 an unbiased estimate of our final model performance? Why or why not?**
 
-*Answer: The optimal value of k in problem 3 is not unbiased since a test data set was not created before starting hyperparameter tuning. Since performance is is not being measured on an independent data set, evaluation bias is introduced.*
+*Answer: The optimal value of k in problem 3 is biased because no test data set was created before starting hyperparameter tuning. Because performance is not measured on an independent data set, evaluation bias is introduced.*
 
 **Make a diagram of the full setup, including 5-fold cross-validation and holdout data similar to the block diagrams we used in the lecture, that you should use to get an unbiased estimate of final model performance.***
 
-*Answer: *
+*Answer: In our diagram, we should have included the five repetitions of the cross-validation.*
 
-```{r, eval=F, echo = FALSE, out.width = "600px"}
-knitr::include_graphics("YourDrawing.jpg")
+```{r, out.width = "75%"}
+knitr::include_graphics("knn_cv_whiteboardjpg.jpg")
 ```
