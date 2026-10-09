@@ -125,7 +125,7 @@ plotHyperParsEffect(knnTuningData, x="k", y="mmce.test.mean")
 
 **Compare your tuning plot with someone else in the course. How are your plots similar or different? Where do you think the differences come from?**
 
-*Answer: *
+*Answer: I compared with Lexi Deford. Our plots are different as the their min is at k=8 and mine is at k=11. Differences in the folds are creating the differences.*
 
 ## Problem 4
 

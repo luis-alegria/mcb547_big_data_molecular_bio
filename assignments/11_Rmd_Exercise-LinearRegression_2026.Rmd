@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Linear Regression"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -28,13 +30,21 @@ df <- df %>% select("mrna","prot") %>% drop_na()
 
 Make a point plot of protein levels versus mRNA levels.
 
-***Is a relationship evident from this plot?***
-
-(Hint: Using `head(df)` will show you the first few rows of the dataframe.)
+```{r}
+head(df)
+```
 
 ```{r}
-
+ggplot(data = df, aes(x = mrna, y = prot)) +
+  geom_point()
 ```
+
+
+***Is a relationship evident from this plot?***
+
+*Answer: From the plot, there appears to be a relationship between mRNA and protein levels. As mRNA levels increase, protein levels appear to increase.*
+
+(Hint: Using `head(df)` will show you the first few rows of the dataframe.)
 
 ### Problem 2
 
@@ -44,10 +54,16 @@ Mutate your data frame to add a columns `logprot` and `logmrna` that contain the
 Then make a point plot of `logprot` versus `logmrna`.
 
 ```{r}
+df <- df %>% 
+  mutate(logmrna = log10(mrna), logprot = log10(prot))
 
+ggplot(data = df, aes(x = logmrna, y = logprot)) +
+  geom_point()
 ```
 
 ***What relationship is evident from this plot?***
+
+*Answer: From this plot, using log10 values, the relationship appears to more clearly show that as mRNA increases, portion level increases.*
 
 ### Problem 3: Whiteboard question
 
@@ -61,7 +77,11 @@ To see details about the fit, use
 summary(mod)
 ```
 
-***What is the estimated slope of the relationship? Is it significantly different from 1? How can you tell? (Hint: use a 95% confidence interval) What does that mean about the relationship between mRNA and protein levels?*** Insert a photo of your work here.
+***What is the estimated slope of the relationship? Is it significantly different from 1? How can you tell? (Hint: use a 95% confidence interval) What does that mean about the relationship between mRNA and protein levels?***
+
+*Answer: The estimated slope is about 1.56.*
+
+Insert a photo of your work here.
 
 ```{r, eval=F, echo = FALSE, out.width = "600px"}
 knitr::include_graphics("YourDrawing.jpg")
@@ -89,7 +109,9 @@ grid <- data.frame(logmrna=x_grid,pred=y_grid$data$response)
 
 Make a point plot of `logprot` vs `logmrna` with a red line showing the model predictions.
 ```{r}
-
+ggplot() +
+  geom_point() +
+  geom_line()
 ```
 
 (Hint: For the line, use `geom_line` and the `grid` data frame.)
