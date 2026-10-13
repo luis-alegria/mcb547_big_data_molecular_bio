@@ -203,7 +203,7 @@ graph_data <- data.frame(
 ***How does the graph-based cell type annotation compare with what you saw when coloring by marker genes?*** Note that it provides distinct, well-defined cell type definitions that look cohesive on the t-SNE plot! 
 ***Give one specific example of a biological conclusion you cannot draw from just looking at the t-SNE plot, and explain why.*** 
 
-*Answer:The graph-based cell annotation is very similar to coloring the t-SNE plot by marker genes. The clustering of cells match in both visualizations. s*
+*Answer:The graph-based cell annotation is very similar to the t-SNE plot colored by marker genes. The cell clusters match in both visualizations. One biological conclusion that cannot be drawn from the t-SNE plot alone is whether T cells are more similar to NK cells. Visually, T cells may appear more similar to NK cells because they cluster closer together, but t-SNE does not produce interpretable axes (unlike PCA), so distances cannot be used to infer cell similarity.*
 
 ### Problem 3
 
@@ -254,7 +254,7 @@ plotColoredTree.PBMC(
 
 ***By looking only at the structure of the dendrogram, can you say whether Natural Killer cells are more similar to T cells or to B cells? Can you say whether FCGR3A+ monocytes or CD14+ monoctyes are more similar to Memory T cells? Explain why or why not for each.***
 
-*Answer:By looking at the structure of the dendogram, it cannot be said whether NK cells are more similar to T or B cells. The branches for these three cell types join at the second node. Yes for whether Memory T cells being more similar FCGR3A+ monocytes or CD14+ monoctyes. More similar to FCGR3A+ monocytes since they branch at a node lower on the tree when compared to CD14+ monoctyes.*
+*Answer:By looking at the structure of the dendrogram, it cannot be said whether NK cells are more similar to T or B cells. The branches for these three cell types join at the same node (second node). The dendrogram suggests that Memory T cells are more similar to FCGR3A+ monocytes than to CD14+ monocytes. They are more similar to FCGR3A+ monocytes because they branch at a lower node on the tree than CD14+ monocytes.*
 
 ### Problem 4
 
@@ -270,7 +270,7 @@ model_clust$BIC
 
 ***What is the optimal number of clusters, and what is the optimal model shape?***
 
-*Answer: Based on BIC, the optimal number of cluster is two and optimal model shape is VEI (diagonal, varying volume, equal shape).*
+*Answer: Based on BIC (-987303.7), the optimal number of cluster is two and optimal model shape is VEI (diagonal, varying volume, equal shape).*
 
 #### Problem 4.b
 
@@ -286,7 +286,7 @@ plotColoredTree.PBMC(
 
 ***How would you characterize the biological difference between the model-based clusters?***
 
-*Answer:The biological difference between model-based clusters can characterized as one cluster (Monocytes) originating from common myeloid progenitors and the second cluster (Mostly lymphoid, some Monos) primarily originating from lymphoid progenitors *
+*Answer:The biological difference between model-based clusters can be characterized as one cluster (Monocytes) originates from common myeloid progenitors and the other (Mostly lymphoid, some Monos) primarily originates from lymphoid progenitors.*
 
 #### Problem 4.c
 

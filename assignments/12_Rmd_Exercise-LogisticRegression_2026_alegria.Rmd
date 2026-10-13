@@ -1,0 +1,203 @@
+---
+title: "Exercise - Logistic Regression"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.show="hide", results="hide", warning=FALSE, message=FALSE)
+```
+
+Today we'll analyze data from the Framingham Heart Study <https://en.wikipedia.org/wiki/Framingham_Heart_Study>. This is a classic epidemiology study that began in 1948 and continues to track a large number of subjects, with a focus on cardiovascular disease. The study introduced the notion of a "risk factor", and much of what we know about risks for heart disease came from this study.
+
+Download the data from `Content -> Datasets -> Framingham -> frmgham.csv`.
+
+First, load up our libraries. We'll be using the `ppcor` library to compute partial correlations. Unfortunately, loading it overrides the tidyverse `select` function.
+So we'll load `ppcor` first, then the `tidyverse`. (We could always access the tidyverse `select` function as `dplyr::select`, but that's a hassle.)
+```{r message=FALSE, warning=FALSE}
+if (!requireNamespace("ppcor", quietly=TRUE))
+  install.packages("ppcor")
+library(ppcor)
+library(tidyverse)
+library(mlr)
+```
+
+Now we'll load the data. This it a little long, because we need to tell the `read_csv` function with columns are binary TRUE/FALSE data (with `col_logical()`) and which have a restricted number of possibilities (with `col_factor()`). We'll only use a few of the columns in this exercise, but we might as well be complete when we load the data.
+```{r message=FALSE, warning=FALSE}
+col_types <- cols(SEX = col_double(),
+                  RANDID = col_double(),
+                  PERIOD = col_double(),
+                  CURSMOKE = col_logical(),
+                  DIABETES = col_logical(),
+                  BPMEDS = col_logical(),
+                  PREVCHD = col_logical(),
+                  PREVAP = col_logical(),
+                  PREVMI = col_logical(),
+                  DEATH = col_logical(),
+                  ANGINA = col_logical(),
+                  HOSPMI = col_logical(),
+                  MI_FCHD = col_logical(),
+                  ANYCHD = col_logical(),
+                  STROKE = col_logical(),
+                  CVD = col_logical(),
+                  HYPERTEN = col_logical())
+df <- read_csv("frmgham.csv", col_types=col_types, na=".")
+```
+
+Our goal today is to examine some of the things that increase the risk of `DEATH` during the study. Since this is a binary outcome, we'll be using logistic regression.
+
+# Problem 1
+
+All participants in the study had up to three detailed medical examinations. For simplicity, let's focus only on the first examination for each patient.
+To that end, filter your data frame to keep only rows corresponding to the first `PERIOD`.
+```{r}
+df <- df %>% filter(PERIOD==1)
+```
+You should have 4434 participants after filtering.
+
+First, we'll examine the effects of `AGE` on `DEATH`.
+
+### Problem 1.a
+
+Make a boxplot illustrating the effect of age on death during the study.
+
+```{r}
+
+```
+
+***From this plot, what do you conclude about the relationship between age and death during this study?***
+
+### Problem 1.b
+
+To compare logistic regression models with data, we often use a different sort of plot. In this plot, we show the continuous variable of interest (`AGE`) on the x-axis and the binary outcome (`DEATH`) on the y-axis.
+
+To make the pattern visible, we'll jitter the points and make them slightly transparent.
+```{r}
+
+```
+
+***How does this plot compare to your previous boxplot? What additional information can you gain from this representation?***
+
+### Problem 1.c
+
+Now let's fit our model. We will use the `classif.logreg` learner in `mlr`. First, we need to prepare the input data for the task and transform the logical values in the `DEATH` variable to numerical values. 
+```{r}
+df_mlr1 <- df %>% select(c("AGE","DEATH")) %>% mutate(DEATH=as.integer(DEATH))
+```
+Next, we set up the task, learner, and train the model. We set `predict.type` to `prob` so that it will output predicted probabilities instead of just classifying each participant into the two categories.
+```{r warning=FALSE, message=FALSE}
+task_age <- makeClassifTask(data = df_mlr1, target = "DEATH")
+logisticLearner <- makeLearner("classif.logreg",predict.type="prob")
+logisticAge <- train(logisticLearner, task_age)
+```
+
+To see details of the output model, use
+```{r}
+summary(getLearnerModel(logisticAge))
+```
+
+***From the model, what do you conclude qualitatively about the effect of age on risk of death?***
+
+***Quantitatively, how much does each year of age increase someone's odds of death?***
+
+### Problem 1.d
+
+Let's plot our model predictions against the data.
+
+First we calculate the predictions for a grid of equally spaced ages.
+```{r}
+x_grid <- data.frame(AGE=seq(from=min(df_mlr1$AGE),to=max(df_mlr1$AGE),length.out=100))
+y_grid <- getPredictionProbabilities(predict(logisticAge, newdata=x_grid,type="prob"),c("0","1"))
+grid <- data.frame(AGE=x_grid,pred=y_grid[,2])
+```
+Note that we have populated the `pred` column with probability of death for each participant.
+***Plot a red line illustrating the model prediction on the same plot as our jittered data.***
+***Qualitatively, how does the model line illustrate the effect of age on risk of death?***
+```{r}
+
+```
+
+# Problem 2
+
+Another potentially important predictor is cholesterol level, represented in the data as `TOTCHOL`. First, we will take the log of the cholesterol so that its distribution is closer to a Gaussian. We will also remove observations with missing values.
+
+```{r}
+df <- df %>% mutate(logchol=log10(TOTCHOL))
+df_mlr2 <- df %>% select(c("DEATH","logchol"))  %>% drop_na() %>% mutate(DEATH=as.integer(DEATH))
+```
+
+### Problem 2.a
+
+As in Problem 1, use the `mlr` package to train a logistic regression model of `DEATH` versus `logchol` and examine the fitted parameters.
+
+***From the model, what do you conclude qualitatively about the effect of total cholesterol level on risk of death?***
+
+```{r}
+
+```
+
+
+### Problem 2b
+
+Make a point plot of `logchol` versus `AGE`.
+
+```{r}
+
+```
+
+***Qualitatively, what is the relationship between total cholesterol and age? How might that relationship complicate our interpretation of the two models we've fit so far?***
+
+Let's test whether they have independent effects on risk of death, by including both in our model. We will use `mlr` to fit a logistic model with `AGE` and `logchol` as predictors.
+```{r message=F,warning=F}
+df_mlr3 <- df %>% select(c("DEATH","logchol","AGE"))  %>% drop_na() %>% mutate(DEATH=as.integer(DEATH))
+task.agechol <- makeClassifTask(data = df_mlr3, target = "DEATH")
+logisticAC <- train(logisticLearner, task.agechol)
+summary(getLearnerModel(logisticAC))
+```
+
+***What do these fit results suggest about the effects of age and total cholesterol level on risk of death?***
+
+
+# Problem 3
+
+Our Framingham data contain a lot of different variables. Let's examine the relationships between the continuous health variables.
+
+### Problem 3.a
+
+From your data frame `df`, select the columns `TOTCHOL, AGE, SYSBP, DIABP, CIGPDAY, BMI, HEARTRTE, GLUCOSE`. Apply the `drop_na` function to your results, to remove any rows with missing data. Store the result in the variable `cont`.
+
+```{r}
+
+```
+
+We can easily calculate the correlation of every pair of variables.
+```{r}
+cor(cont)
+```
+
+For this problem, let's focus on systolic blood presssure (`SYSBP`). (That's the top number in your blood pressure, which measures the force when your heart is contracted.)
+
+***Which three variables is systolic blood pressure most highly correlated with?***
+
+We can carry out a hypothesis test on the correlation. In particular, let's test the correlation between systolic blood pressure and Body Mass Index (`BMI`).
+```{r}
+cor.test(cont$SYSBP,cont$BMI)
+```
+
+***How do we interpret the p-value of this test?***
+
+### Problem 3.b
+
+You found the systolic blood pressure and BMI were correlated, but systolic blood pressure is also correlated with many other variables that are correlated with BMI. To estimate the effect of systolic blood pressure independent of the other variables, we can calculate a partial correlation. Conveniently, the `pcor` function also gives us p-values automatically.
+```{r}
+pcor(cont)
+```
+
+***What do you conclude about the relationship between systolic blood pressure and BMI, based on this partial correlation analysis?***
+
+
+
+
+
+
