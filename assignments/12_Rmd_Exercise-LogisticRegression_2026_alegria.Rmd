@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Logistic Regression"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -63,10 +65,13 @@ First, we'll examine the effects of `AGE` on `DEATH`.
 Make a boxplot illustrating the effect of age on death during the study.
 
 ```{r}
-
+ggplot(data = df, aes(x = factor(DEATH), y = AGE)) +
+  geom_boxplot()
 ```
 
 ***From this plot, what do you conclude about the relationship between age and death during this study?***
+
+*From the plot, we can conclude ...*
 
 ### Problem 1.b
 
@@ -74,11 +79,12 @@ To compare logistic regression models with data, we often use a different sort o
 
 To make the pattern visible, we'll jitter the points and make them slightly transparent.
 ```{r}
-
+ggplot(df) + 
+  geom_jitter(aes(x=AGE,y=as.numeric(DEATH)), height=0.1, width=0.5, alpha=0.3)
 ```
 
 ***How does this plot compare to your previous boxplot? What additional information can you gain from this representation?***
-
+*Individual points, fewer individuals, biased towards alive, density, *
 ### Problem 1.c
 
 Now let's fit our model. We will use the `classif.logreg` learner in `mlr`. First, we need to prepare the input data for the task and transform the logical values in the `DEATH` variable to numerical values. 
@@ -98,8 +104,10 @@ summary(getLearnerModel(logisticAge))
 ```
 
 ***From the model, what do you conclude qualitatively about the effect of age on risk of death?***
-
+*b-value, .11, coeff, look at coeff postive or negative, increases in age increases prob of death*
 ***Quantitatively, how much does each year of age increase someone's odds of death?***
+
+*exp of b co e^0.11=1.12, new odds divided by old odds. 12% increase*
 
 ### Problem 1.d
 
@@ -115,7 +123,12 @@ Note that we have populated the `pred` column with probability of death for each
 ***Plot a red line illustrating the model prediction on the same plot as our jittered data.***
 ***Qualitatively, how does the model line illustrate the effect of age on risk of death?***
 ```{r}
-
+ggplot() + 
+  geom_jitter(data = df,aes(x=AGE,y=as.numeric(DEATH)), 
+              height=0.1, width=0.5, alpha=0.3) +
+  geom_line(data = grid, aes(x = AGE, y = pred) ,
+            colour = "red")
+  
 ```
 
 # Problem 2
