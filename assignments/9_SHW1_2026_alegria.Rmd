@@ -174,7 +174,7 @@ wrap_plots(bcell, nkcell, tcell, monos, plates, dendros, ncol = 3)
 
 ***Which cell type shows the biggest improvement in clustering and separation when compared with PCA? Show the PCA and t-SNE plots colored by the corresponding marker gene.***
 
-*Answer: The cell type showing the biggest improvement in clustering and separation when compared to PCA appears to be NK cells. In the t-SNE plot, these cells cluster more tightly in the top-left portion of the figure and are more separated from T cells.*
+*Answer: The cell type showing the biggest improvement in clustering and separation when compared to PCA appears to be NK cells. In the t-SNE plot, these cells cluster in the top-left portion of the figure and are more separated from T cells.*
 
 Using graph-based nearest neighbor clustering, one can robustly define cell types using the full scRNA-seq dataset (rather than with individual marker genes and arbitrary thresholds). We have provided these graph-based cell type annotations in a separate file in exactly the same order as the rows of the original data matrix. 
 
@@ -290,14 +290,10 @@ plotColoredTree.PBMC(
 
 #### Problem 4.c
 
-***Give a specific example of a biological insight you could get from studying the dendrogram, but not from model-based clustering alone.*** (For example, try comparing the dendrogram to the developmental hierarchy cartoon at the top of the assignment.)
-
-```{r}
-
-```
+***Give a specific example of a biological insight you could get from studying the dendrogram, but not from model-based clustering alone.*** (For example, try comparing the dendrogram to the developmental hierarchy cartoon at the top of the assignment.
 
 
-*Answer: NK cells more similar to lymphocytes than to monocytes.*
+*Answer: A specific biological question that the dendrogram can address but model-based clustering alone cannot is whether NK cells are more similar to lymphocytes than to monocytes. In the dendrogram, monocytes split from NK and T cells at the top node, while NK and T cells split one node lower, indicating they are more similar. Based on model-based clustering alone, this insight could not be made.*
 
 ### Problem 5
 
@@ -313,7 +309,7 @@ knitr::include_graphics("IMG_9607.jpg")
 
 In 5-6 sentences: First, explain how your own research, job, coursework, or other personal experience led you to choose this aspect of PBMCs. Second, describe how a data analysis technique from this class could be applied to further understand the topic you chose. 
 
-*Answer: Are dendritic cells more similar to myeloid or lymphoid cells?*
+*Answer: I earned an undergraduate degree in medical laboratory science, where I received training in hematology. I was taught that monocytes belong to the myeloid lineage, so seeing the FCGR3A+ monocytes cluster with lymphoid-lineage cells surprised me. I would investigate why the monocytes with this marker appear in both clusters. To analyze this question, I would subset monocytes containing the FCGR3A+ marker and the CD14+ markers and look at differential expression of genes indicative of lymphoid cells (e.g., MS4A1, IL7R, and GNLY from problem 1) using a False Discovery Rate. This would determine whether the expression profile of FCGR3A+ cells is more similar to lymphoid cells than to CD14+ monocytes.*
 
 ### Problem 6
 
@@ -338,7 +334,7 @@ Once the analysis results appear, you'll see a sorted list of genes with their e
 
 **Can you interpret any biology of heroin addiction from the top differentially expressed genes?**
 
-*Answer:*
+*Answer: It is difficult to make any biological interpretation for heroin use based on differentially expressed genes.*
 
 Click on the "Download full table" link, which will save a file called `GSE87823.top.table.tsv` to your computer after a few seconds. Move that file into whichever directory you choose to complete your exercise in.
 
@@ -439,4 +435,4 @@ head(all_tests$set, 20)
 
 ***Do you see any patterns among these gene sets? How might they relate to the neurobiology of heroin usage?***
 
-*Answer: The 20 gene sets with most with most significant enrichment seemed to be associated with autism, attention deficit hyperactive disorder and their associated behaviors. In addition, there are gene sets for abnormal formation of body structures (e.g., palpebral fissures, nasal tip, and nasal bridge). It ...*
+*Answer: The 20 most significantly enriched gene sets relate to autism, attention deficit hyperactivity disorder (ADHD), and associated behaviors. In addition, gene sets related to abnormal formation of body structures (e.g., palpebral fissures, nasal tip, and nasal bridge) were identified. It may be that heroin use changes the expression of gene sets that lead to behaviors associated with autism and ADHD. It is unclear how the gene sets related to the formation of body structures are related to heroin use.*
