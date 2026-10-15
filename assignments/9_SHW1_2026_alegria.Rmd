@@ -11,7 +11,7 @@ editor_options:
 
 The blood consists of many important cell types. Peripheral blood mononuclear cells (PBMCs) contain round nuclei and include lymphocytes - T cells, B cells, and natural killer (NK) cells - and monocytes. Cells that have multi-lobed nuclei include neutrophils, basophils, and eosinophils. Cells without nuclei include erythrocytes and platelets. These cell types are typically defined by the marker proteins expressed on their surface, but this definition can be qualitative and arbitrary. Furthermore, although the basics of hematopoiesis - or how blood cells develop (see diagram below) - are well-understood, the true relationship between cell types is highly complex and difficult to disentangle.
 
-```{r, echo=FALSE, out.width = "100%"}
+```{r, echo=FALSE, out.width = "75%"}
 knitr::include_graphics("Hematopoiesis_simple.png")
 ```
 
@@ -208,7 +208,7 @@ graph_data <- data.frame(
 ***How does the graph-based cell type annotation compare with what you saw when coloring by marker genes?*** Note that it provides distinct, well-defined cell type definitions that look cohesive on the t-SNE plot! 
 ***Give one specific example of a biological conclusion you cannot draw from just looking at the t-SNE plot, and explain why.*** 
 
-*Answer:The graph-based cell annotation is very similar to the t-SNE plot colored by marker genes. The cell clusters match in both visualizations. One biological conclusion that cannot be drawn from the t-SNE plot alone is whether T cells are more similar to NK cells or B cells. Visually, T cells may appear more similar to NK cells because they cluster closer together, but t-SNE does not produce interpretable axes (unlike PCA), so distances cannot be used to infer cell similarity.*
+*Answer:The graph-based cell annotation is very similar to the t-SNE plot colored by marker genes. The cell clusters match in both visualizations. One biological conclusion that cannot be drawn from the t-SNE plot alone is whether T cells are more similar to NK cells or B cells. Visually, T cells may appear more similar to NK cells because they cluster closer together, but t-SNE does not produce interpretable axes (unlike PCA), so distances in the plot cannot be used to infer cell similarity.*
 
 ### Problem 3
 
@@ -359,7 +359,7 @@ tib <- read_tsv('GSE87823.top.table.tsv')
 
 ```{r}
 tib <- tib %>% 
-  mutate(upregulated = if_else(logFC > 0 & P.Value < 0.05, TRUE, FALSE))
+  mutate(upregulated = logFC > 0 & P.Value < 0.05)
 
 paste("Upregulated fraction:", 
       round(sum(tib$upregulated) / nrow(tib), 3))
@@ -430,7 +430,7 @@ all_tests <- all_tests %>% mutate(fdr=p.value*m/1:m)
 sum(all_tests$fdr < 0.05)
 ```
 
-*Answer: At a False Discovery Rate of 5%, 298 gene sets are enriched.*
+*Answer: At a False Discovery Rate of 5%, about 298 gene sets are enriched.*
 
 #### Problem 6.f
 
@@ -443,4 +443,4 @@ head(all_tests$set, 20)
 
 ***Do you see any patterns among these gene sets? How might they relate to the neurobiology of heroin usage?***
 
-*Answer: The 20 most significantly enriched gene sets relate to autism, attention deficit hyperactivity disorder (ADHD), and associated behaviors. In addition, gene sets related to abnormal formation of body structures (e.g., palpebral fissures, nasal tip, and nasal bridge) were identified. It may be that opioid use changes the expression of gene sets that lead to behaviors associated with autism and ADHD. It is unclear how the gene sets related to the formation of body structures are related to heroin use.*
+*Answer: The 20 most significantly enriched gene sets relate to autism, attention deficit hyperactivity disorder (ADHD), and associated behaviors. In addition, gene sets related to abnormal formation of body structures (e.g., palpebral fissures, nasal tip, and nasal bridge) were identified. It may be that opioid use changes the expression of gene sets that lead to behaviors associated with autism and ADHD. It is unclear how the gene sets related to the formation of body structures are related to opioid use.*
