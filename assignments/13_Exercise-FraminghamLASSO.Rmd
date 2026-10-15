@@ -1,0 +1,216 @@
+---
+title: "Exercise - Framingham LASSO"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+After building multiple regression models for the Framingham data by hand last exercise, today we'll do it automatically using LASSO and ridge regression. Let's load our libraries.
+
+```{r setup, message=FALSE, warning=FALSE}
+if (!requireNamespace("glmnet", quietly=TRUE))
+  install.packages("glmnet")
+library(glmnet)
+library(mlr)
+library(tidyverse)
+```
+
+Load the data as before. We will also recode the `SEX` into male and female.
+
+```{r load-data}
+col_types <- cols(SEX = col_double(),
+                  RANDID = col_double(),
+                  PERIOD = col_double(),
+                  CURSMOKE = col_logical(),
+                  DIABETES = col_logical(),
+                  BPMEDS = col_logical(),
+                  PREVCHD = col_logical(),
+                  PREVAP = col_logical(),
+                  PREVMI = col_logical(),
+                  PERIOD = col_double(),
+                  DEATH = col_logical(),
+                  ANGINA = col_logical(),
+                  HOSPMI = col_logical(),
+                  MI_FCHD = col_logical(),
+                  ANYCHD = col_logical(),
+                  STROKE = col_logical(),
+                  CVD = col_logical(),
+                  HYPERTEN = col_logical())
+df <- read_csv("frmgham.csv", col_types=col_types, na=".")
+df$SEX <- as.factor(recode(df$SEX, `1`="male", `2`="female"))
+```
+
+As before, we'll only use data from the first `PERIOD` for our predictions, take the log of `TOTCHOL`, remove NAs, and transform logical values into 0s and 1s. We will work with a select number of features.
+
+```{r prepare-data}
+df <- df %>% filter(PERIOD==1) 
+df_mlr <- df %>% mutate(LOGCHOL=log10(TOTCHOL)) %>% 
+  select(c("RANDID","SEX","AGE","DEATH","SYSBP","DIABP","BPMEDS",
+           "CURSMOKE","CIGPDAY","LOGCHOL","BMI","GLUCOSE","HEARTRTE")) %>% 
+  drop_na() %>% 
+  mutate(BPMEDS = as.integer(BPMEDS), 
+         CURSMOKE = as.integer(CURSMOKE), 
+         DEATH = as.integer(DEATH))
+```
+
+To evaluate our fits, we'll hold out 500 observations for testing and use the remaining observations for training. Finally, we'll remove the patient ID column to prepare the datasets for use in `mlr`.
+
+```{r train-test-split}
+test_df <- df_mlr %>% sample_n(500)
+train_df <- df_mlr %>% filter(!(RANDID %in% test_df$RANDID))
+test_mlr <- test_df %>% select(-RANDID)
+train_mlr <- train_df %>% select(-RANDID)
+```
+
+## Problem 1
+
+Recall that potential variables in our data set that could be predictive of death include:
+
+| **Variable** | Explanation |
+|--------------|-------------|
+| SEX | Participant sex (1=male, 2=female) |
+| AGE | Age at exam (years) |
+| SYSBP | Systolic Blood Pressure (mmHg) |
+| DIABP | Diastolic Blood Pressure (mmHg) |
+| BPMEDS | Use of Anti-hypertensive medication at exam |
+| CURSMOKE | Current cigarette smoking at exam |
+| CIGPDAY | Number of cigarettes smoked each day |
+| TOTCHOL | Serum Total Cholesterol (mg/dL) |
+| BMI | Body Mass Index, weight in kilograms/height meters squared |
+| GLUCOSE | Casual serum glucose (mg/dL) |
+| HEARTRTE | Heart rate in beats/min |
+
+### Problem 1.a
+
+Let's fit a logistic regression model with all these predictors in it:
+
+```{r logistic-model}
+taskTrain <- makeClassifTask(data = train_mlr, target = "DEATH")
+logisticLearner <- makeLearner("classif.logreg",predict.type="prob")
+modelTrain <- train(logisticLearner,taskTrain)
+summary(getLearnerModel(modelTrain))
+```
+
+***Which coefficients are significantly different from zero in this fit?***
+
+*Answer: SEXmale, AGE, SYSBP, GLUCOSE*
+
+### Problem 1.b
+
+Now we generate predictions for our test set and compute the performance in terms of accuracy.
+
+```{r logistic-accuracy}
+accLogistic <- performance(predict(modelTrain, newdata=test_mlr, type="prob"), list(acc))
+```
+
+***What is the accuracy of the prediction?***
+
+*Answer:The accuracy of prediction is 0.772.*
+
+## Problem 2
+
+Now let's experiment with penalized regression. The penalty function that glmnet fits is 
+$$\lambda \left[\alpha |b| + (1-\alpha) \frac{b^2}{2}\right].$$ 
+
+Here $b$ is a model coefficient. So $\alpha$ controls what sort of penalty is applied. With $\alpha = 1$ (the default), only the linear term applies, so we have LASSO. With $\alpha = 0$, only the quadratic term applies, so we have ridge regression. And with $\alpha = \frac{1}{2}$, both apply equally, which is elastic net.
+
+### Problem 2.a
+
+First, let's run a LASSO regression. The `classif.glmnet` learner will automatically test various values of $\lambda$, so we can see how the penalty changes the model parameters.
+
+```{r lasso-model}
+learnLasso <- makeLearner("classif.glmnet",alpha=1,predict.type="prob")
+trainLasso <- train(learnLasso, taskTrain)
+modelLasso <- getLearnerModel(trainLasso)
+```
+
+First, let's plot the inferred values of the model coefficients, as $\lambda$ is varied.
+
+```{r lasso-plot, fig.width=8, fig.height=6}
+plot(modelLasso, label=TRUE, xvar="lambda")
+```
+
+For a clearer look, we can see how the coefficients change as $\lambda$ is decreased
+
+```{r lasso-coefs}
+coef(modelLasso)
+```
+
+***As $\lambda$ is made smaller, what are the first three coefficients that enter the prediction? How does the order in which they enter the model relate to their p-values in the full model?***
+
+*Answer: AGE, SYSTOLIC Blood Pressure, SEX in that order. p-values: AGE and SEX, < 2e-16, SYSBP 2.04e-10*
+
+### Problem 2.b
+
+To find the optimal value of $\lambda$, we want to run a cross-validation. Fortunately, the `classif.cvglmnet` learner makes that easy. By default, it will run a 10-fold cross-validation.
+
+```{r cv-lasso}
+learnCV <- makeLearner("classif.cvglmnet",alpha=1,predict.type="prob")
+trainCV <- train(learnCV, taskTrain)
+modelCV <- getLearnerModel(trainCV)
+```
+
+We can easily plot how the fit to the training data varies with $\lambda$.
+
+```{r cv-plot, fig.width=8, fig.height=6}
+plot(modelCV)
+```
+
+***What does this plot imply about the best $\lambda$? What does this imply out our LASSO regression versus our normal regression?***
+
+*Answer: It implies that the best lambda kept nine out of the twelve features. So LASSO regression model less complex than normal regression?*
+
+### Problem 2.c
+
+We can pull out the coefficients corresponding to the best $\lambda$ easily.
+
+```{r cv-best-coefs}
+coef(modelCV,s="lambda.min")
+```
+
+***How complex is this model with the best cross-validation score?***
+
+*Answer:It contains nine features out of the twelve, *
+
+### Problem 2.d
+
+For a somewhat simpler model, we can pull out the coefficients that get us within 1 standard error of the best cross-validation score.
+
+```{r cv-1se-coefs}
+coef(modelCV, s = "lambda.1se")
+```
+
+**How does this model compare with the best cross-validation model and with the full model from above?***
+
+*Answer: Even Less complex as it only has 6 features?*
+
+### Problem 2.e
+
+Now let's fit the model with the best $\lambda$ (given by `model_cv$lambda.min`) on the training data and see how well it predicts the test data.
+
+```{r lasso-optimal}
+learnOptimal <- makeLearner("classif.glmnet",alpha=1,predict.type="prob",
+                            par.vals=list(lambda=modelCV$lambda.min))
+trainOptimal <- train(learnOptimal, taskTrain)
+accOptimal <- performance(predict(trainOptimal, newdata=test_mlr,
+                                  type="prob"),list(acc))
+```
+
+***How does the accuracy of the LASSO model compare with the full regression model? What does this tell you about the performance of LASSO on these data?***
+
+*Answer:Slightly increases from 0.772 to 0.774 but not by much, comparable to full regression?*
+
+### Problem 2.f
+
+Now let's run a ridge regression, which includes only the squared term.
+
+```{r ridge-model}
+learnRidge <- makeLearner("classif.cvglmnet",alpha=0,predict.type="prob")
+trainRidge <- train(learnRidge, taskTrain)
+modelRidge <- getLearnerModel(trainRidge)
+coef(modelRidge,s="lambda.min")
+```
+
+***How does the best ridge regression model compare with the LASSO model? How does this reflect the differences in the penalty terms?***
+
+*Answer: more complex, penalty term for RIDGE not as strong, coeffs are being pushed to *
