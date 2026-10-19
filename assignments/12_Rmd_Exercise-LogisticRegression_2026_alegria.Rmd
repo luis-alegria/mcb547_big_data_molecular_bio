@@ -2,13 +2,17 @@
 title: "Exercise - Logistic Regression"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.show="hide", results="hide", warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning=FALSE, message=FALSE)
+#fig.show="hide", results="hide"
 ```
 
 Today we'll analyze data from the Framingham Heart Study <https://en.wikipedia.org/wiki/Framingham_Heart_Study>. This is a classic epidemiology study that began in 1948 and continues to track a large number of subjects, with a focus on cardiovascular disease. The study introduced the notion of a "risk factor", and much of what we know about risks for heart disease came from this study.
@@ -71,7 +75,7 @@ ggplot(data = df, aes(x = factor(DEATH), y = AGE)) +
 
 ***From this plot, what do you conclude about the relationship between age and death during this study?***
 
-*From the plot, we can conclude ...*
+*From the plot, we can conclude that for this study death is associated with older individuals. For the feature Death, the median age of individuals who are alive is around 46 years while for individuals who have passed it is around 56.*
 
 ### Problem 1.b
 
@@ -80,16 +84,21 @@ To compare logistic regression models with data, we often use a different sort o
 To make the pattern visible, we'll jitter the points and make them slightly transparent.
 ```{r}
 ggplot(df) + 
-  geom_jitter(aes(x=AGE,y=as.numeric(DEATH)), height=0.1, width=0.5, alpha=0.3)
+  geom_jitter(aes(x=AGE,y=as.numeric(DEATH)), 
+              height=0.1, width=0.5, alpha=0.3)
 ```
 
 ***How does this plot compare to your previous boxplot? What additional information can you gain from this representation?***
-*Individual points, fewer individuals, biased towards alive, density, *
+
+*In this plot with AGE on the x-axis, you can see the individual data points and their densities have the same relationship as the previous plot: death is associated with older individuals. We also see that there are fewer individuals in the dead category when compared to alive category so this feature is biased to individuals who are alive.*
+
 ### Problem 1.c
 
 Now let's fit our model. We will use the `classif.logreg` learner in `mlr`. First, we need to prepare the input data for the task and transform the logical values in the `DEATH` variable to numerical values. 
 ```{r}
-df_mlr1 <- df %>% select(c("AGE","DEATH")) %>% mutate(DEATH=as.integer(DEATH))
+df_mlr1 <- df %>% 
+  select(c("AGE","DEATH")) %>%
+  mutate(DEATH=as.integer(DEATH))
 ```
 Next, we set up the task, learner, and train the model. We set `predict.type` to `prob` so that it will output predicted probabilities instead of just classifying each participant into the two categories.
 ```{r warning=FALSE, message=FALSE}
@@ -104,10 +113,17 @@ summary(getLearnerModel(logisticAge))
 ```
 
 ***From the model, what do you conclude qualitatively about the effect of age on risk of death?***
-*b-value, .11, coeff, look at coeff postive or negative, increases in age increases prob of death*
+
+*The coefficient for AGE is positive with a value of about 0.115. Qualitatively, this means that an increase in age increases the risk of death.*
+
 ***Quantitatively, how much does each year of age increase someone's odds of death?***
 
-*exp of b co e^0.11=1.12, new odds divided by old odds. 12% increase*
+```{r}
+exp(0.115)
+```
+
+
+*Quantitatively, we have that exp(0.115) is about 1.12. This means that as age is increased by 1 year, the odds of death increase by 1.12 or 12%.*
 
 ### Problem 1.d
 
@@ -115,13 +131,18 @@ Let's plot our model predictions against the data.
 
 First we calculate the predictions for a grid of equally spaced ages.
 ```{r}
-x_grid <- data.frame(AGE=seq(from=min(df_mlr1$AGE),to=max(df_mlr1$AGE),length.out=100))
+x_grid <- data.frame(AGE=seq(from=min(df_mlr1$AGE),
+                             to=max(df_mlr1$AGE),length.out=100))
 y_grid <- getPredictionProbabilities(predict(logisticAge, newdata=x_grid,type="prob"),c("0","1"))
 grid <- data.frame(AGE=x_grid,pred=y_grid[,2])
 ```
 Note that we have populated the `pred` column with probability of death for each participant.
 ***Plot a red line illustrating the model prediction on the same plot as our jittered data.***
+
 ***Qualitatively, how does the model line illustrate the effect of age on risk of death?***
+
+*The model line shows that as age increases, the risk of death increases with a probability p > 0.5. of death occurring for ages greater than about 57.*
+
 ```{r}
 ggplot() + 
   geom_jitter(data = df,aes(x=AGE,y=as.numeric(DEATH)), 
@@ -137,7 +158,9 @@ Another potentially important predictor is cholesterol level, represented in the
 
 ```{r}
 df <- df %>% mutate(logchol=log10(TOTCHOL))
-df_mlr2 <- df %>% select(c("DEATH","logchol"))  %>% drop_na() %>% mutate(DEATH=as.integer(DEATH))
+df_mlr2 <- df %>% select(c("DEATH","logchol"))  %>%
+  drop_na() %>% 
+  mutate(DEATH=as.integer(DEATH))
 ```
 
 ### Problem 2.a
@@ -147,7 +170,11 @@ As in Problem 1, use the `mlr` package to train a logistic regression model of `
 ***From the model, what do you conclude qualitatively about the effect of total cholesterol level on risk of death?***
 
 ```{r}
+task_chol <- makeClassifTask(data = df_mlr2, target = "DEATH")
+logisticLearner <- makeLearner("classif.logreg",predict.type="prob")
+logisticChol <- train(logisticLearner, task_chol)
 
+summary(getLearnerModel(logisticChol))
 ```
 
 
@@ -156,14 +183,20 @@ As in Problem 1, use the `mlr` package to train a logistic regression model of `
 Make a point plot of `logchol` versus `AGE`.
 
 ```{r}
-
+ggplot(df) + 
+  geom_point(aes(x = AGE, y = logchol))
 ```
 
 ***Qualitatively, what is the relationship between total cholesterol and age? How might that relationship complicate our interpretation of the two models we've fit so far?***
 
+*Qualitatively, it appears that as age increases so does total cholesterol. This complicates the interpretation of the two models so far as it introduces uncertainty as to whether age or total cholesterol has a higher influence on death. or whether the two features influence one another?*
+
 Let's test whether they have independent effects on risk of death, by including both in our model. We will use `mlr` to fit a logistic model with `AGE` and `logchol` as predictors.
 ```{r message=F,warning=F}
-df_mlr3 <- df %>% select(c("DEATH","logchol","AGE"))  %>% drop_na() %>% mutate(DEATH=as.integer(DEATH))
+df_mlr3 <- df %>% 
+  select(c("DEATH","logchol","AGE"))  %>%
+  drop_na() %>% 
+  mutate(DEATH=as.integer(DEATH))
 task.agechol <- makeClassifTask(data = df_mlr3, target = "DEATH")
 logisticAC <- train(logisticLearner, task.agechol)
 summary(getLearnerModel(logisticAC))
@@ -181,7 +214,10 @@ Our Framingham data contain a lot of different variables. Let's examine the rela
 From your data frame `df`, select the columns `TOTCHOL, AGE, SYSBP, DIABP, CIGPDAY, BMI, HEARTRTE, GLUCOSE`. Apply the `drop_na` function to your results, to remove any rows with missing data. Store the result in the variable `cont`.
 
 ```{r}
-
+cont <- df %>% 
+  select(c("TOTCHOL", "AGE", "SYSBP", "DIABP", "CIGPDAY", 
+           "BMI", "HEARTRTE", "GLUCOSE")) %>% 
+  drop_na()
 ```
 
 We can easily calculate the correlation of every pair of variables.
