@@ -93,7 +93,7 @@ summary(getLearnerModel(modelTrain))
 
 ***Which coefficients are significantly different from zero in this fit?***
 
-*Answer: SEXmale, AGE, SYSBP, GLUCOSE*
+*Answer: SEXmale, AGE, SYSBP, GLUCOSE, CIGPDAY, BPMEDS, CURSMOKE*
 
 ### Problem 1.b
 
@@ -158,7 +158,7 @@ plot(modelCV)
 
 ***What does this plot imply about the best $\lambda$? What does this imply out our LASSO regression versus our normal regression?***
 
-*Answer: It implies that the best lambda kept nine out of the twelve features. So LASSO regression model less complex than normal regression?*
+*Answer: It implies that the best lambda kept nine out of the twelve features. So LASSO regression model less complex than normal regression? Lambda not different from regular, same performance*
 
 ### Problem 2.c
 
@@ -198,7 +198,7 @@ accOptimal <- performance(predict(trainOptimal, newdata=test_mlr,
 
 ***How does the accuracy of the LASSO model compare with the full regression model? What does this tell you about the performance of LASSO on these data?***
 
-*Answer:Slightly increases from 0.772 to 0.774 but not by much, comparable to full regression?*
+*Answer:Slightly increases from 0.772 to 0.774 but not by much, comparable to full regression?, accuracy same but less features.*
 
 ### Problem 2.f
 
