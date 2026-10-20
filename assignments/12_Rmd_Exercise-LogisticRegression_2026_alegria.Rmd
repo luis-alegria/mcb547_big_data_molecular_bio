@@ -75,7 +75,7 @@ ggplot(data = df, aes(x = factor(DEATH), y = AGE)) +
 
 ***From this plot, what do you conclude about the relationship between age and death during this study?***
 
-*From the plot, we can conclude that for this study death is associated with older individuals. For the feature Death, the median age of individuals who are alive is around 46 years while for individuals who have passed it is around 56.*
+*From the plot, we can conclude that, in this study, death is associated with older individuals. For the Death feature, the median age of living individuals is around 46 years, while the median age of deceased individuals is around 56 years.*
 
 ### Problem 1.b
 
@@ -90,7 +90,7 @@ ggplot(df) +
 
 ***How does this plot compare to your previous boxplot? What additional information can you gain from this representation?***
 
-*In this plot with AGE on the x-axis, you can see the individual data points and their densities have the same relationship as the previous plot: death is associated with older individuals. We also see that there are fewer individuals in the dead category when compared to alive category so this feature is biased to individuals who are alive.*
+*In this plot, with AGE on the x-axis, the individual data points and their densities show the same relationship as the previous plot: death is associated with older individuals. It also appears that the DEATH column has fewer individuals in the dead category than in the alive category.*
 
 ### Problem 1.c
 
@@ -114,7 +114,7 @@ summary(getLearnerModel(logisticAge))
 
 ***From the model, what do you conclude qualitatively about the effect of age on risk of death?***
 
-*The coefficient for AGE is positive with a value of about 0.115. Qualitatively, this means that an increase in age increases the risk of death.*
+*The AGE coefficient is positive, at about 0.115. Qualitatively, this means that an increase in age increases the risk of death.*
 
 ***Quantitatively, how much does each year of age increase someone's odds of death?***
 
@@ -123,7 +123,7 @@ exp(0.115)
 ```
 
 
-*Quantitatively, we have that exp(0.115) is about 1.12. This means that as age is increased by 1 year, the odds of death increase by 1.12 or 12%.*
+*Quantitatively, we have exp(0.115) is about 1.12. This means that as age increases by 1 year, the odds of death increase by 1.12 or 12%.*
 
 ### Problem 1.d
 
@@ -141,7 +141,7 @@ Note that we have populated the `pred` column with probability of death for each
 
 ***Qualitatively, how does the model line illustrate the effect of age on risk of death?***
 
-*The model line shows that as age increases, the risk of death increases with a probability p > 0.5. of death occurring for ages greater than about 57.*
+*The model line shows that as age increases, the risk of death increases, with a probability > 0.5 of death occurring when age is greater than or equal to 57, roughly*
 
 ```{r}
 ggplot() + 
@@ -167,8 +167,6 @@ df_mlr2 <- df %>% select(c("DEATH","logchol"))  %>%
 
 As in Problem 1, use the `mlr` package to train a logistic regression model of `DEATH` versus `logchol` and examine the fitted parameters.
 
-***From the model, what do you conclude qualitatively about the effect of total cholesterol level on risk of death?***
-
 ```{r}
 task_chol <- makeClassifTask(data = df_mlr2, target = "DEATH")
 logisticLearner <- makeLearner("classif.logreg",predict.type="prob")
@@ -177,6 +175,9 @@ logisticChol <- train(logisticLearner, task_chol)
 summary(getLearnerModel(logisticChol))
 ```
 
+***From the model, what do you conclude qualitatively about the effect of total cholesterol level on risk of death?***
+
+*The coefficient for logchol is positive, at 2.6740. Qualitatively, this means that an increase in cholesterol increases the risk of death.*
 
 ### Problem 2b
 
@@ -189,7 +190,7 @@ ggplot(df) +
 
 ***Qualitatively, what is the relationship between total cholesterol and age? How might that relationship complicate our interpretation of the two models we've fit so far?***
 
-*Qualitatively, it appears that as age increases so does total cholesterol. This complicates the interpretation of the two models so far as it introduces uncertainty as to whether age or total cholesterol has a higher influence on death. or whether the two features influence one another?*
+*Qualitatively, total cholesterol appears to increase with age. This complicates interpreting the two models so far, as it introduces uncertainty about whether age or total cholesterol has a greater influence on death, or whether both do.*
 
 Let's test whether they have independent effects on risk of death, by including both in our model. We will use `mlr` to fit a logistic model with `AGE` and `logchol` as predictors.
 ```{r message=F,warning=F}
@@ -203,6 +204,8 @@ summary(getLearnerModel(logisticAC))
 ```
 
 ***What do these fit results suggest about the effects of age and total cholesterol level on risk of death?***
+
+*The fit results show that the logchol coefficient is negative (-0.093072), while the AGE coefficient is positive (0.115903) and similar to Model 1 (0.114842). Of the two features, only AGE has a significant p-value (< 2e-16). Based on the numbers, AGE is the feature that influences the risk of death.*
 
 
 # Problem 3
@@ -229,12 +232,16 @@ For this problem, let's focus on systolic blood presssure (`SYSBP`). (That's the
 
 ***Which three variables is systolic blood pressure most highly correlated with?***
 
+*Systolic blood pressure is most highly correlated with the features diastolic blood pressure, age, and BMI.*
+
 We can carry out a hypothesis test on the correlation. In particular, let's test the correlation between systolic blood pressure and Body Mass Index (`BMI`).
 ```{r}
 cor.test(cont$SYSBP,cont$BMI)
 ```
 
 ***How do we interpret the p-value of this test?***
+
+*The p-value of this test (Pearson’s product-moment correlation) is < 2.2e-16. This means we can reject the null hypothesis that systolic blood pressure and BMI are not correlated. The correlation is positive, with a value of 0.3244233.*
 
 ### Problem 3.b
 
@@ -245,8 +252,4 @@ pcor(cont)
 
 ***What do you conclude about the relationship between systolic blood pressure and BMI, based on this partial correlation analysis?***
 
-
-
-
-
-
+*The partial correlation analysis gives a correlation of 0.02045127 and a p-value of 1.971265e-01 between systolic blood pressure and BMI. This means the two features are not correlated, and other features (blood pressure and age) influenced the previous correlation calculation.*
