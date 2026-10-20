@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Cancer Genomics (cBioPortal)"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -57,6 +59,8 @@ rownames(brca.counts) <- brca.unique$Hugo_Symbol
 
 ***Question:*** Why did we have to use the code `select(starts_with("TCGA"))` the second time? (Hint: how many columns were eliminated in this step? Which ones were they?)
 
+*The code `select(starts_with("TCGA"))` is used to remove the columns `Hugo_Symbol` and `Entrez_Gene_Id` as they do not contain read counts.*
+
 ## Problem 2
 
 Next, we will read in the clinical data.
@@ -89,6 +93,8 @@ The major molecular subtypes of breast cancer are Luminal A, Luminal B, HER2+, B
 
 ***Question: Based on the lecture, what is the main biological difference between the Luminal, Her2, and Basal subtypes?***
 
+*The main biological difference is whether they are ER- or ER+?*
+
 Note that the “Normal” subtype is a type of breast cancer that morphologically looks like normal breast tissue.
 
 ## Problem 3
@@ -105,25 +111,32 @@ Now use `prcomp` and `ggplot` to make a PCA plot and color it by subtype. Rememb
 ```{r}
 counts.scale <- scale(t(brca.counts))
 raw.pca <- prcomp(counts.scale)
-ggplot(data.frame(raw.pca$x))+geom_point(mapping=aes(x=PC1,y=PC2,col=brca.subtypes))
+ggplot(data.frame(raw.pca$x)) + 
+  geom_point(mapping=aes(x=PC1,y=PC2,col=brca.subtypes))
 
 ```
 
 ***Question: Describe the PCA plot. How do PC1 and PC2 separate the samples?***
 
+*The PCA plot is color coding the samples according to subtype. PC1 Does not appear to separte the subtypes, something else? while PC2 is separating as basal (triple negative) vs the other four subtypes?*
+
 ## Problem 4
 
 You should have found that PC1 was not explainable in terms of cancer subtypes. It likely represents technical variation coming from data processing, which can be mitigated using normalization and noise filtering. We will therefore preprocess the data using standard techniques from RNA-seq analysis. This is not within the curriculum for the class, so I will provide you the code. First install the packages `edgeR` and `limma`.
 
-```{r}
+```{r eval=FALSE}
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("edgeR")
 BiocManager::install("limma")
+```
+
+```{r}
 library(edgeR)
 library(limma)
 ```
+
 
 ```{r}
 brca.dge <- DGEList(counts = brca.counts)
@@ -135,27 +148,41 @@ brca.normalized <- brca.normalized$E
 If you are unable to use these packages, please download the normalized data from D2L and read into R as follows: 
 
 ```{r}
-brca.normalized <- read.table("brca.normalized.txt", check.names = FALSE)
+# brca.normalized <- read.table("brca.normalized.txt", check.names = FALSE)
 ```
 
 As we discussed in class, an important step before clustering disease subtypes is to filter out the noisy genes or features in the data. Just like the first researchers who discovered the subtypes of breast cancer, we will do this by choosing the 500 most variable genes in the dataset. To do so, compute the standard deviation (using the R function `sd`) for all the genes in `brca.normalized`, arrange the rows in order of decreasing standard deviation, and define a new dataframe called `brca.variable` that only contains the top 500 genes.
 
+
 ```{r}
+brca.sd <- apply(brca.normalized, 1, sd)
 
+#convert to df
+brca.normalized <- as.data.frame(brca.normalized)
 
+brca.variable <- brca.normalized %>%
+  mutate(SD=brca.sd) %>%
+  arrange(desc(SD))
+
+#select top 500 and remove sd
+brca.variable <- brca.variable[1:500, 1:981]
+  
 ```
 
 
 Next, create a new PCA plot using the new filtered dataset `brca.variable`. 
 
 ```{r}
-
-
+variable.scale <- scale(t(brca.variable))
+variable.pca <- prcomp(variable.scale)
+ggplot(data.frame(variable.pca$x)) + 
+  geom_point(mapping = aes(x=PC1,y=PC2,col=brca.subtypes))
 ```
 
 
 ***Question: What do PC1 and PC2 represent now? Do you see better separation between any of the subtypes? Which ones?***
 
+*PC1 separates basal, her2, normal, Pattern of prognosis PC2 also prognosis?*
 
 ## Problem 5
 
@@ -194,10 +221,14 @@ all_tests <- tibble(set = names(db), p.value = all_pvals) %>% arrange(p.value) %
 
 ***Question: Which GO terms are significant at FDR < 0.05? What gene had the highest PC1 positive component? How do these pieces of information reflect the separation you see on the PCA plot along PC1? Interpret the biology in terms of breast cancer subtypes.***
 
+*Hormone levels?*
+
 ## Problem 6
 
 Repeat the same analysis for the genes with the most negative components along PC1. You should find enrichment in immune response and intermediate filament pathways. 
 ***Question: Which cancer subtype is present on the left side of the PCA plot? Use PubMed or Google to search and explain why this subtype would be associated with immune pathways and intermediate filaments.***
+
+*Triple negative inflammatory and immune pathways?*
 
 ## Problem 7
 
@@ -231,8 +262,12 @@ acc.estim(brca.subtypes, norm.hc5)
 
 ***Question: What is the estimated accuracy of subtype classification using hierarchical clustering on all the normalized data?***
 
+**
+
 Now repeat the same calculation for the dataset filtered for the 500 most variable genes `brca.variable`.
 ***Question: What is the accuracy now for the most variable genes?***
+
+**
 
 Finally, let’s go back to the full normalized dataset `brca.normalized` and this time choose 500 genes at random.
 
