@@ -1,0 +1,251 @@
+---
+title: "Exercise - Cancer Genomics (cBioPortal)"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Exercise - Cancer Genomics
+
+In this exercise, you will be analyzing one of the most comprehensive breast cancer genomic datasets currently available in the US. This data is available from cBioPortal, a free data portal that gives you access to large cancer genomic studies. If you want to explore the portal, you can go to https://www.cbioportal.org/. The data for this exercise was accessed by: 1) clicking on Data Sets in the top header, 2) scrolling down to “Breast invasive carcinoma (TCGA, PanCancer Atlas)” and 3) clicking on the downward-facing arrow to the right.
+
+Go to D2L -> Datasets and download the files `data_mrna_seq_v2_rsem.txt` and `data_clinical_patient.txt`. The first file contains gene expression data from 1082 patients (estimated read counts from RNA-seq processed using the RSEM workflow) and the second file contains clinical data on 1082 patients.
+
+## Read in the gene expression data
+
+```{r}
+brca.file <- read.table("data_mrna_seq_v2_rsem.txt", header = TRUE, sep = "\t", check.names = FALSE)
+brca.file[1:5, 1:5]
+```
+
+We will first clean the data a little, keeping only those rows that are annotated to a gene symbol.
+
+```{r}
+brca.withsymbol <- brca.file %>% 
+                      filter(Hugo_Symbol != "")
+```
+
+## Problem 1
+
+There are sometimes multiple measurements for one gene symbol (which means that the same gene symbol shows up in multiple rows). These correspond to different transcripts (e.g. isoforms) that originate from the same gene. We will choose just one row for each unique gene symbol. The standard approach is to choose the row with the highest overall read count, as this represents the most highly expressed form of the gene.
+
+I have provided the code for this step. Please look at it carefully and understand it, since you will be using a similar process further down in this exercise to select the most variable genes.
+
+```{r}
+## First, compute the average read count for each gene. Note that we use "apply," which applies a function to the rows or columns of a matrix. The second input parameter to "apply" is 1 if you want to apply it to rows, 2 if you want to apply it to columns. 
+brca.counts0 <- select(brca.withsymbol,starts_with("TCGA"))
+brca.meancount <- apply(brca.counts0,1,mean)
+
+## Next, we add the average counts as a new column to the original dataframe and order the rows by decreasing average count value.
+brca.withsymbol <- brca.withsymbol %>% mutate(AVGCOUNT=brca.meancount) %>% arrange(desc(AVGCOUNT)) 
+
+## Finally, let's remove rows with duplicate gene symbols. The function "duplicated" gives TRUE if the gene symbol was already present in an earlier row (meaning that there was a row with higher average read count present).
+brca.unique <- brca.withsymbol %>% filter(!(duplicated(Hugo_Symbol)))
+
+## Create a matrix of read counts and annotate the rows by the unique gene symbol.
+brca.counts <- brca.unique %>% select(starts_with("TCGA"))
+rownames(brca.counts) <- brca.unique$Hugo_Symbol
+```
+
+***Question:*** Why did we have to use the code `select(starts_with("TCGA"))` the second time? (Hint: how many columns were eliminated in this step? Which ones were they?)
+
+## Problem 2
+
+Next, we will read in the clinical data.
+
+```{r}
+clin.file <- read.table("data_clinical_patient.txt", header = TRUE, sep = "\t")
+```
+
+Use the command `view(clin.file)` to take a look at the clinical data. We will now rename the columns of the counts matrix by sample IDs that match the clinical file. (However, note that the order of samples is not necessarily the same as the order of samples in the expression matrix. It’s up to us to match the dataframes.)
+
+```{r}
+short.names <- sapply(colnames(brca.counts), function(x) {
+  substr(x, 1, 12)
+})
+colnames(brca.counts) <- short.names
+```
+
+We will interpret our analysis in terms of the five known subtypes of breast cancer, which are annotated in the column `SUBTYPE`. Let’s subset our expression data to those patients with known subtypes, and create a vector of subtypes for these patients.
+
+```{r}
+clin.with.subtype <- clin.file %>% 
+                      filter(SUBTYPE != "")
+
+brca.counts <- brca.counts[, clin.with.subtype$PATIENT_ID]
+brca.subtypes <- clin.with.subtype$SUBTYPE
+table(brca.subtypes)
+```
+
+The major molecular subtypes of breast cancer are Luminal A, Luminal B, HER2+, Basal, and Normal-like. The above code shows you the number of tumors in each category.
+
+***Question: Based on the lecture, what is the main biological difference between the Luminal, Her2, and Basal subtypes?***
+
+Note that the “Normal” subtype is a type of breast cancer that morphologically looks like normal breast tissue.
+
+## Problem 3
+
+We will now create a PCA plot for the data `brca.counts`. First, remove rows with zero counts total:
+
+```{r}
+brca.total <- apply(brca.counts, 1, sum)
+brca.counts <- brca.counts %>% filter(brca.total > 0)
+```
+
+Now use `prcomp` and `ggplot` to make a PCA plot and color it by subtype. Remember to transpose and scale the data first.
+
+```{r}
+counts.scale <- scale(t(brca.counts))
+raw.pca <- prcomp(counts.scale)
+ggplot(data.frame(raw.pca$x))+geom_point(mapping=aes(x=PC1,y=PC2,col=brca.subtypes))
+
+```
+
+***Question: Describe the PCA plot. How do PC1 and PC2 separate the samples?***
+
+## Problem 4
+
+You should have found that PC1 was not explainable in terms of cancer subtypes. It likely represents technical variation coming from data processing, which can be mitigated using normalization and noise filtering. We will therefore preprocess the data using standard techniques from RNA-seq analysis. This is not within the curriculum for the class, so I will provide you the code. First install the packages `edgeR` and `limma`.
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("edgeR")
+BiocManager::install("limma")
+library(edgeR)
+library(limma)
+```
+
+```{r}
+brca.dge <- DGEList(counts = brca.counts)
+brca.dge <- calcNormFactors(brca.dge, method = "TMM")
+brca.normalized <- voom(brca.dge, plot = FALSE)
+brca.normalized <- brca.normalized$E
+```
+
+If you are unable to use these packages, please download the normalized data from D2L and read into R as follows: 
+
+```{r}
+brca.normalized <- read.table("brca.normalized.txt", check.names = FALSE)
+```
+
+As we discussed in class, an important step before clustering disease subtypes is to filter out the noisy genes or features in the data. Just like the first researchers who discovered the subtypes of breast cancer, we will do this by choosing the 500 most variable genes in the dataset. To do so, compute the standard deviation (using the R function `sd`) for all the genes in `brca.normalized`, arrange the rows in order of decreasing standard deviation, and define a new dataframe called `brca.variable` that only contains the top 500 genes.
+
+```{r}
+
+
+```
+
+
+Next, create a new PCA plot using the new filtered dataset `brca.variable`. 
+
+```{r}
+
+
+```
+
+
+***Question: What do PC1 and PC2 represent now? Do you see better separation between any of the subtypes? Which ones?***
+
+
+## Problem 5
+
+What are the molecular signatures driving this variance between the samples (and subtypes)? We can characterize the genes that have highest weight along PC1. Let’s consider the positively weighted genes and the negatively weighted genes separately. The genes with positive coefficients are expressed more in the samples on the right side of the plot, whereas the genes with negative coefficients are expressed more in the samples on the left side.
+
+Here, I have provided the code for selecting the top 200 positive and negative genes from PC1.
+
+```{r}
+pc1.comp <- var.pca$rotation[, "PC1"]
+## Note: Switch "var.pca" above to whatever you named the object resulting from prcomp.
+
+pc1.genes.up <- names(pc1.comp)[order(pc1.comp, decreasing = TRUE)][1:200]
+pc1.genes.dn <- names(pc1.comp)[order(pc1.comp, decreasing = FALSE)][1:200]
+```
+
+Now, let’s evaluate `pc1.genes.up` for functional enrichment. I have provided code for applying Fisher’s exact test and adjusting the p-values.
+
+```{r}
+not.pc1.up <- setdiff(rownames(brca.counts), pc1.genes.up)
+
+db <- readRDS('Hsapiens_GO_genesets.rds')
+
+enrichment_pval <- function(gs) {
+  ul <- length(intersect(pc1.genes.up, db[[gs]]))
+  ur <- length(setdiff(pc1.genes.up, db[[gs]]))
+  ll <- length(intersect(not.pc1.up, db[[gs]]))
+  lr <- length(setdiff(not.pc1.up, db[[gs]]))
+  table <- matrix(c(ul, ll, ur, lr), nrow = 2)
+  return(fisher.test(table, alternative = "greater")$p.value)
+}
+
+all_pvals <- map_dbl(names(db), enrichment_pval)
+
+all_tests <- tibble(set = names(db), p.value = all_pvals) %>% arrange(p.value) %>% mutate(fdr = p.adjust(p.value, method = "BH"))
+```
+
+***Question: Which GO terms are significant at FDR < 0.05? What gene had the highest PC1 positive component? How do these pieces of information reflect the separation you see on the PCA plot along PC1? Interpret the biology in terms of breast cancer subtypes.***
+
+## Problem 6
+
+Repeat the same analysis for the genes with the most negative components along PC1. You should find enrichment in immune response and intermediate filament pathways. 
+***Question: Which cancer subtype is present on the left side of the PCA plot? Use PubMed or Google to search and explain why this subtype would be associated with immune pathways and intermediate filaments.***
+
+## Problem 7
+
+The original discovery of these subtypes was made through hierarchical clustering. Let’s use `dist` with default parameters and `hclust` with complete linkage to cluster the original normalized dataset `brca.normalized`. (Remember we need to transpose and scale the data before calculating the distances.)
+
+```{r}
+norm.scale <- scale(t(brca.normalized))
+norm.dists <- dist(norm.scale)
+norm.hc <- hclust(norm.dists, "complete")
+```
+
+Next, cut the tree to create 5 clusters.
+
+```{r}
+norm.hc5 <- cutree(norm.hc, k = 5)
+```
+
+Let’s see how the clusters match the known subtypes. We can look at this visually using a contingency table:
+
+```{r}
+table(brca.subtypes, norm.hc5)
+```
+
+Next, we will calculate an estimated accuracy of classification by assigning each cluster to the best-matched known subtype of breast cancer. I have defined the function `acc.estim` below and shown how to apply it to the hierarchical clustering results.
+
+```{r}
+acc.estim <- function(true.class, pred.class) { sum(apply(table(true.class, pred.class), 2, max)) / length(true.class) }
+
+acc.estim(brca.subtypes, norm.hc5)
+```
+
+***Question: What is the estimated accuracy of subtype classification using hierarchical clustering on all the normalized data?***
+
+Now repeat the same calculation for the dataset filtered for the 500 most variable genes `brca.variable`.
+***Question: What is the accuracy now for the most variable genes?***
+
+Finally, let’s go back to the full normalized dataset `brca.normalized` and this time choose 500 genes at random.
+
+```{r}
+brca.random <- brca.normalized[sample(seq_len(nrow(brca.normalized)), 500), ]
+```
+
+Repeat the same calculation as above for `brca.random`. 
+
+***Question: What is the accuracy now? What does this tell us about the importance of the most variable genes?***
+
+```{r}
+
+
+```
+
