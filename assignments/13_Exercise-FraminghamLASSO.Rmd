@@ -2,7 +2,11 @@
 title: "Exercise - Framingham LASSO"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
 ---
 
 After building multiple regression models for the Framingham data by hand last exercise, today we'll do it automatically using LASSO and ridge regression. Let's load our libraries.
@@ -93,7 +97,7 @@ summary(getLearnerModel(modelTrain))
 
 ***Which coefficients are significantly different from zero in this fit?***
 
-*Answer: SEXmale, AGE, SYSBP, GLUCOSE, CIGPDAY, BPMEDS, CURSMOKE*
+*Answer: According to the output, the coefficients for SEXmale, AGE, SYSBP, BPMEDS, CIGPDAY, and GLUCOSE are significantly different from zero for this model.*
 
 ### Problem 1.b
 
@@ -138,7 +142,7 @@ coef(modelLasso)
 
 ***As $\lambda$ is made smaller, what are the first three coefficients that enter the prediction? How does the order in which they enter the model relate to their p-values in the full model?***
 
-*Answer: AGE, SYSTOLIC Blood Pressure, SEX in that order. p-values: AGE and SEX, < 2e-16, SYSBP 2.04e-10*
+*Answer: As $\lambda$ is made smaller, the first three coefficients entering the prediction are AGE, SYSBP, and SEX. In the full model, these features had the three most significant p-values (AGE and SEX:< 2e-16 and SYSBP: 2.04e-10).*
 
 ### Problem 2.b
 
@@ -158,7 +162,7 @@ plot(modelCV)
 
 ***What does this plot imply about the best $\lambda$? What does this imply out our LASSO regression versus our normal regression?***
 
-*Answer: It implies that the best lambda kept nine out of the twelve features. So LASSO regression model less complex than normal regression? Lambda not different from regular, same performance*
+*Answer: The plot implies that the best $\lambda$ (right dashed line) is a small value (-Log($\lambda$)). Since $\lambda$ is small, LASSO regression keeps most features, and it is not much different from the logistic regression model with 11 features.*
 
 ### Problem 2.c
 
@@ -170,7 +174,7 @@ coef(modelCV,s="lambda.min")
 
 ***How complex is this model with the best cross-validation score?***
 
-*Answer:It contains nine features out of the twelve, *
+*Answer: The model with the best cross-validation score retains 9 of 11 features, making it slightly less complex than the full model.*
 
 ### Problem 2.d
 
@@ -182,7 +186,7 @@ coef(modelCV, s = "lambda.1se")
 
 **How does this model compare with the best cross-validation model and with the full model from above?***
 
-*Answer: Even Less complex as it only has 6 features?*
+*Answer: The 1se model retains 5 features, making it less complex than both the $\lambda$ min model and the full model.*
 
 ### Problem 2.e
 
@@ -198,7 +202,7 @@ accOptimal <- performance(predict(trainOptimal, newdata=test_mlr,
 
 ***How does the accuracy of the LASSO model compare with the full regression model? What does this tell you about the performance of LASSO on these data?***
 
-*Answer:Slightly increases from 0.772 to 0.774 but not by much, comparable to full regression?, accuracy same but less features.*
+*Answer: The LASSO model's accuracy is about the same as that of the full regression model. LASSO regression does not perform better than the full model on this data.*
 
 ### Problem 2.f
 
@@ -213,4 +217,8 @@ coef(modelRidge,s="lambda.min")
 
 ***How does the best ridge regression model compare with the LASSO model? How does this reflect the differences in the penalty terms?***
 
-*Answer: more complex, penalty term for RIDGE not as strong, coeffs are being pushed to *
+*Answer: The ridge regression model retained all features (no coefficient is zero). This makes it more complex than the LASSO model. The RIDGE penalty shrinks coefficients toward zero, while the LASSO penalty shrinks coefficients and can push them to zero, discarding features.*
+
+### Reflection 
+
+The plot and question for problem 2.b for LASSO regression took some time to understand. Initially, I had the interpretation backward, thinking smaller $\lambda$ values were on the left of the figure, but looking at the axis values (-Log($\lambda$)) made me realize the smaller values were actually on the right.
