@@ -1,6 +1,7 @@
-
 ---
 title: "Exercise - Cancer Drug Sensitivity"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
@@ -50,7 +51,7 @@ df <- readRDS("GDSC1_Expr.Rds")
 
 **What does each row in this dataset represent? What do the `EXPR_` columns represent?**
 
-*Answer:*
+*Answer: Each row in this dataset represents a cell line with the `EXPR_` columns representing the gene expression values for the genes.*
 
 
 ### Doxorubicin
@@ -63,7 +64,7 @@ Hint: the column you want is `LN_IC50_Doxorubicin`.
 
 ```{r dox-histogram}
 df %>%
-  ggplot(aes(x = ???)) +
+  ggplot(aes(x = LN_IC50_Doxorubicin)) +
   geom_histogram(bins = 30) +
   labs(
     title = "Doxorubicin sensitivity across cancer cell lines",
@@ -77,7 +78,7 @@ df %>%
 
 **Broadly, what is the shape of this distribution? Are many cell lines sensitive to Doxorubicin (i.e., do many cell lines have low log(IC50) values)?**
 
-*Answer:*
+*Answer: The distribution of cell line sensitivity to Doxorubicin is skewed to the right. From the plot it appears that the majority of cell lines are have low log(IC50) values and so are sensitive to Doxorubicin.*
 
 
 ### Imatinib
@@ -102,7 +103,7 @@ df %>%
 
 **How does the distribution of Imatinib sensitivities differ from the Doxorubicin distribution? Why might a targeted therapy produce a different distribution of drug sensitivities across cancer cell lines?**
 
-*Answer:*
+*Answer: The distribution for Imatinib sensitivities is skewed to the left, opposite to the distribution for Doxorubicin. It is more effective so only resistant cell lines are being left???*
 
 
 ---
@@ -164,7 +165,7 @@ plot(doxModel)
 
 **What does this plot show? Why might the cross-validation error increase when $\lambda$ is very small (left side of the plot) or very large (right side)? What is the tradeoff between these two extremes?**
 
-*Answer:*
+*Answer:The plot shows mean-squared error with error bars for the cross validation scores for varying -Log($\lambda$) values. Additionally, it shows two lines: one for lambda.min and lambda.1se. When lambda is large, underfitting can be occurring so inaccurate, when small overfits, doesnt't generalize. *
 
 
 Now extract the non-zero coefficients using `lambda.min`, the value of $\lambda$ that minimizes cross-validation error.
@@ -191,7 +192,13 @@ The coefficient assigned to a gene describes how its expression contributes to p
 
 **How many genes have a non-zero coefficient for Doxorubicin? Which genes have the largest positive and negative coefficients? What do these coefficients tell you about their associations with drug sensitivity?**
 
-*Answer:*
+```{r}
+len(doxCoef)
+
+```
+
+
+*Answer:According to the last output, 168 genes have non-zero coefficients.*
 
 
 Now plot the LASSO model's predicted log(IC50) values against the observed values for the same cell lines used to fit the model (best practice would be to predict on cell lines not used to fit the model, but this is an example exercise).
@@ -280,21 +287,26 @@ data.frame(
 
 These plots show predictions for the training data. Would you expect the models to perform equally well on new cell lines that were not used for training?**
 
-*Answer:*
+*Answer: For both plots, the predicted values do not seem to be matching the observed values. Perfect predictions would mean that all point fall on the line? No, the model would not generalize well. *
 
 
 ### Question 7
 
 **How does the number of genes with non-zero coefficients for Imatinib compare with Doxorubicin? Does having fewer selected genes necessarily mean that a drug has a more specific mechanism of action? Explain.**
 
-*Answer:*
+*Answer: For Imatinib, 78 genes are non-zero, so less than the 168 of Doxorubicin. Yes, maybe?*
 
 
 ### Question 8
 
 **Imatinib inhibits the ABL kinase, particularly the BCR–ABL1 fusion protein. Is `EXPR_ABL1` among the genes selected by LASSO for Imatinib? If so, is its coefficient positive or negative?**
 
-*Answer:*
+```{r}
+imatinibCoef[imatinibCoef$gene == "EXPR_ABL1",]
+```
+
+
+*Answer: Yes, among the genes selected by LASSO Imatinib, we have ABL1, with a negative value of -0.02728149*
 
 
 ---
