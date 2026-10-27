@@ -2,8 +2,10 @@
 title: "Exercise - Cancer Genomics (cBioPortal)"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -93,7 +95,7 @@ The major molecular subtypes of breast cancer are Luminal A, Luminal B, HER2+, B
 
 ***Question: Based on the lecture, what is the main biological difference between the Luminal, Her2, and Basal subtypes?***
 
-*The main biological difference between the Luminal, Her2, and Basal subtypes is whether they have higher expression of estrogen receptor or not. (ER+ or ER-). The Luminal subtype is ER+ while Her2 and Basal are ER-.*
+*The main biological difference between the Luminal, Her2, and Basal subtypes is whether they express estrogen receptors at higher levels. (ER+ or ER-). The Luminal subtype is ER+, while HER2 and Basal are ER-.*
 
 Note that the “Normal” subtype is a type of breast cancer that morphologically looks like normal breast tissue.
 
@@ -118,18 +120,18 @@ ggplot(data.frame(raw.pca$x)) +
 
 ***Question: Describe the PCA plot. How do PC1 and PC2 separate the samples?***
 
-*The PCA plot color-codes the samples by subtype. PC1 does not appear to separate the subtypes, as they are all mixed, while PC2 appears to be separating samples as basal (triple negative) vs the other four subtypes.*
+*The PCA plot color-codes the samples by subtype. PC1 does not appear to separate the subtypes, as they are all mixed, while PC2 appears to separate samples into basal (triple negative) and the other four subtypes.*
 
 ## Problem 4
 
 You should have found that PC1 was not explainable in terms of cancer subtypes. It likely represents technical variation coming from data processing, which can be mitigated using normalization and noise filtering. We will therefore preprocess the data using standard techniques from RNA-seq analysis. This is not within the curriculum for the class, so I will provide you the code. First install the packages `edgeR` and `limma`.
 
 ```{r eval=FALSE}
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("edgeR")
-BiocManager::install("limma")
+# if (!require("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# 
+# BiocManager::install("edgeR")
+# BiocManager::install("limma")
 ```
 
 ```{r}
@@ -182,7 +184,7 @@ ggplot(data.frame(variable.pca$x)) +
 
 ***Question: What do PC1 and PC2 represent now? Do you see better separation between any of the subtypes? Which ones?***
 
-*PC1 now appears to represent whether a subtype is HR+ or HR- with better separation for basal, her2, and normal subtypes. PC1 also appears to be capturing the pattern of prognosis. PC2 does not appear to separate the samples as they look mixed.*
+*PC1 now appears to represent whether a subtype is HR+ or HR-, with better separation among the basal, HER2, and normal subtypes. PC1 also appears to capture some of the prognosis pattern described in the lecture. PC2 does not appear to separate the samples, as they look mixed.*
 
 ## Problem 5
 
@@ -222,18 +224,53 @@ all_tests <- tibble(set = names(db), p.value = all_pvals) %>% arrange(p.value) %
 ***Question: Which GO terms are significant at FDR < 0.05? What gene had the highest PC1 positive component? How do these pieces of information reflect the separation you see on the PCA plot along PC1? Interpret the biology in terms of breast cancer subtypes.***
 
 ```{r}
-all_tests[all_tests$fdr < 0.05,]
+#GO terms
+head(all_tests[all_tests$fdr < 0.05,], 10)
+```
+
+```{r}
+#highest PC1, since decreasing = TRUE
+pc1.genes.up[1]
 ```
 
 
-*GO terms significant at FDR < 0.05 include HORMONE and MAMMARY_GLAND. The gene with the highest positive PC1 component is ESR1 or Estrogen Receptor 1. HR+ vs HR- *
+*GO terms significant at FDR < 0.05 include HORMONE and MAMMARY_GLAND. The gene with the highest positive PC1 component is ESR1 (Estrogen Receptor 1). HR+ vs HR-. These pieces of information reflect the separation along PC1 in the previous plot. HR+ positive subtypes (LumA and LumB) are furthest to the right, indicating high estrogen receptor expression, and decrease as PC1 moves left, ending with the basal subtype (triple negative).*
 
 ## Problem 6
 
-Repeat the same analysis for the genes with the most negative components along PC1. You should find enrichment in immune response and intermediate filament pathways. 
+Repeat the same analysis for the genes with the most negative components along PC1. You should find enrichment in immune response and intermediate filament pathways.
+
+```{r}
+not.pc1.dn <- setdiff(rownames(brca.counts), pc1.genes.dn)
+
+db <- readRDS('Hsapiens_GO_genesets.rds')
+
+enrichment_pval <- function(gs) {
+  ul <- length(intersect(pc1.genes.dn, db[[gs]]))
+  ur <- length(setdiff(pc1.genes.dn, db[[gs]]))
+  ll <- length(intersect(not.pc1.dn, db[[gs]]))
+  lr <- length(setdiff(not.pc1.dn, db[[gs]]))
+  table <- matrix(c(ul, ll, ur, lr), nrow = 2)
+  return(fisher.test(table, alternative = "greater")$p.value)
+}
+
+all_pvals_dn <- map_dbl(names(db), enrichment_pval)
+
+all_tests_dn <- tibble(set = names(db), p.value = all_pvals_dn) %>% arrange(p.value) %>% mutate(fdr = p.adjust(p.value, method = "BH"))
+```
+
+```{r}
+head(all_tests_dn[all_tests_dn$fdr < 0.05,], 10)
+```
+
+```{r}
+pc1.genes.dn[1]
+```
+
+
 ***Question: Which cancer subtype is present on the left side of the PCA plot? Use PubMed or Google to search and explain why this subtype would be associated with immune pathways and intermediate filaments.***
 
-*On the left side you have the s Triple negative inflammatory and immune pathways?*
+_On the left, you have the basal subtype (triple negative). This subtype is associated with immune pathways, as there is an abundance of the immune cell lymphocyte in this breast cancer subtype (1). There is also an association with intermediate filaments, as there is dysregulation of these structures in tumor tissue (2). **Sources: (1) Leon-Ferre RA et al., International Immuno-Oncology Biomarker Working Group. Tumor-Infiltrating Lymphocytes in Triple-Negative Breast Cancer. JAMA. 2024 Apr 2;331(13):1135-1144. doi: 10.1001/jama.2024.3056. PMID: 38563834; PMCID: PMC10988354. (2) Sharma P, Alsharif S, Fallatah A, Chung BM. Intermediate Filaments as Effectors of Cancer Development and Metastasis: A Focus on Keratins, Vimentin, and Nestin. Cells. 2019 May 23;8(5):497. doi: 10.3390/cells8050497. PMID: 31126068; PMCID: PMC6562751.**_
 
 ## Problem 7
 
@@ -267,12 +304,22 @@ acc.estim(brca.subtypes, norm.hc5)
 
 ***Question: What is the estimated accuracy of subtype classification using hierarchical clustering on all the normalized data?***
 
-**
+*The estimated accuracy for subtype classification is about 0.57 on all normalized data.*
 
 Now repeat the same calculation for the dataset filtered for the 500 most variable genes `brca.variable`.
+
+```{r}
+variable.dist <- dist(variable.scale)
+variable.hc <- hclust(variable.dist, "complete")
+variable.hc5 <- cutree(variable.hc, k = 5)
+
+table(brca.subtypes, variable.hc5)
+acc.estim(brca.subtypes, variable.hc5)
+```
+
 ***Question: What is the accuracy now for the most variable genes?***
 
-**
+*The accuracy is now about 0.73 for most variable genes.*
 
 Finally, let’s go back to the full normalized dataset `brca.normalized` and this time choose 500 genes at random.
 
@@ -280,12 +327,20 @@ Finally, let’s go back to the full normalized dataset `brca.normalized` and th
 brca.random <- brca.normalized[sample(seq_len(nrow(brca.normalized)), 500), ]
 ```
 
-Repeat the same calculation as above for `brca.random`. 
-
-***Question: What is the accuracy now? What does this tell us about the importance of the most variable genes?***
+Repeat the same calculation as above for `brca.random`.
 
 ```{r}
+rand.scale <- scale(t(brca.random))
+rand.dists <- dist(rand.scale)
+rand.hc <- hclust(rand.dists, "complete")
+rand.hc5 <- cutree(rand.hc, k = 5)
 
+table(brca.subtypes, rand.hc5)
+acc.estim(brca.subtypes, rand.hc5)
 
 ```
 
+
+***Question: What is the accuracy now? What does this tell us about the importance of the most variable genes?***
+
+*The accuracy is now about 0.51, which is lower than the accuracy for the most variable genes (0.73). This suggests that it is important to work with the most variable genes, as these are less likely to contain noise and make clustering more accurate.*
