@@ -1,0 +1,101 @@
+---
+title: "Exercise - Naive Bayes"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Today, we’ll be working with data from the Stanford HIV Drug Resistance Database https://hivdb.stanford.edu/pages/genopheno.dataset.html. The data consist of normalized in vitro measurements of drug resistance, plus sequences of the relevant genes in each HIV strain. Our goal will be to predict whether or not a new strain will be resistant, given the mutations it carries.
+
+To make our predictions, today we’ll use Naive Bayes.
+
+First, download the data from Content -> Datasets -> HIVDrugs -> PI_DataSet.txt. These data particularly focus on HIV Protease Inhibitors, so we’ll be working with sequences of the protease gene.
+
+Let’s load our libraries.
+
+```{r}
+library(tidyverse)
+library(mlr)
+```
+
+Now let’s load the data.
+
+```{r}
+df <- read_tsv("PI_DataSet.txt", na=c("NA","."))
+```
+
+In the data file, the amino acid at each position in the protease gene is specified. If it matches wild-type HIV, it is recorded as `-`, otherwise the new amino acid is recorded. For analysis, we want to convert those columns (all of which start with P) into factors with set levels, as opposed to unrestricted characters. Here we use mutate_at to apply as.factor to the relevant columns. To choose which columns, we take all column names and take the subset that start with P.
+
+```{r}
+df <- df %>% mutate_at(names(df) %>% str_subset(pattern="^P.*"), as.factor)
+```
+
+For today’s exercise, we’ll train a model to predict response to Fosamprenavir (FPV) https://en.wikipedia.org/wiki/Fosamprenavir. Our dividing line between calling a strain “resistant” versus “susceptible” will be 5 times the dose that kills wild-type HIV. Let’s add a column denoted susceptibility to FPV. The cut command will create our binary classification based on the quantitative level of FPV resistance.
+
+```{r}
+df <- df %>% mutate(susceptibility=cut(FPV, c(-Inf,5,Inf), labels=c('susceptible','resistant')))
+```
+
+Now we’ll simplify our data frame, keeping only the ID for each HIV strain, its binary susceptibility, and its protease sequence. Then we drop strains for which susceptibility wasn’t measured.
+
+```{r}
+df <- df %>% select(susceptibility, starts_with("P")) %>% drop_na(susceptibility)
+```
+
+# Problem 1
+
+```{r}
+task <- makeClassifTask(data=df, target="susceptibility")
+bayes <- makeLearner("classif.naiveBayes", predict.type ="prob")
+kFold <- makeResampleDesc(method="RepCV", folds=5, reps=10, stratify=TRUE)
+bayesCV <- resample(learner=bayes, task=task, resampling=kFold)
+```
+
+We can then evaluate the performance of this model as we vary the probability threshold for declaring a strain to be susceptible.
+
+```{r}
+thresh <- generateThreshVsPerfData(bayesCV$pred, measures = list(fpr, tpr, mmce))
+plotThreshVsPerf(thresh)
+```
+
+***Question: Is the optimal threshold for these data, according to mmce, equal to 0.5? Does the optimal threshold skew the results toward increase true positives or reducing false positives?***
+
+# Problem 2 - Whiteboard problem
+
+It’s easy to plot a ROC curve.
+
+```{r}
+plotROCCurves(thresh)
+```
+
+Draw the ROC curve plot on the whiteboard. On it, label the approximate point corresponding to a threshold of 0.5 and the point corresponding to the optimal mmce threshold.
+
+```{r, eval=F, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("YourDrawing.jpg")
+```
+
+# Problem 3
+
+Now let’s train our model using all the data.
+
+```{r}
+fullmodel <- train(bayes, task)
+```
+
+We can inspect the model to identify how the amino acid at each position affected the probability of being susceptible or resistant. For example, in position 90, ~80% of susceptible strains had the wildtype allele, compared to only ~40% of the resistant strains.
+
+```{r}
+fullmodel$learner.model$tables$P90
+```
+
+Visit the Stanford HIV Drug Resistance Database, https://hivdb.stanford.edu/dr-summary/mut-scores/PI/. Check the FPV/r box to add the mutation scores for FPV resistance. For which positions with a score of 60 do we see a big effect in our model?
+
+# Problem 4
+
+***If our classifier were being used to decide which drugs to prescribe to an HIV patient, do you think we should be more concerned about false positive predictions or false negative predictions?*** (Positive means sensitivity to FPV and negative means resistance. A false positive would result in the patient being given FPV, whereas a false negative would result in the patient being given drugs that target other HIV functions.)
+
+
