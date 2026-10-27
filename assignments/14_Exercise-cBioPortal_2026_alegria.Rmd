@@ -59,7 +59,7 @@ rownames(brca.counts) <- brca.unique$Hugo_Symbol
 
 ***Question:*** Why did we have to use the code `select(starts_with("TCGA"))` the second time? (Hint: how many columns were eliminated in this step? Which ones were they?)
 
-*The code `select(starts_with("TCGA"))` is used to remove the columns `Hugo_Symbol` and `Entrez_Gene_Id` as they do not contain read counts.*
+*The code `select(starts_with("TCGA"))` was used a second time to remove the columns `Hugo_Symbol` and `Entrez_Gene_Id` as they do not contain read counts, just gene information.*
 
 ## Problem 2
 
@@ -93,7 +93,7 @@ The major molecular subtypes of breast cancer are Luminal A, Luminal B, HER2+, B
 
 ***Question: Based on the lecture, what is the main biological difference between the Luminal, Her2, and Basal subtypes?***
 
-*The main biological difference is whether they are ER- or ER+?*
+*The main biological difference between the Luminal, Her2, and Basal subtypes is whether they have higher expression of estrogen receptor or not. (ER+ or ER-). The Luminal subtype is ER+ while Her2 and Basal are ER-.*
 
 Note that the “Normal” subtype is a type of breast cancer that morphologically looks like normal breast tissue.
 
@@ -118,7 +118,7 @@ ggplot(data.frame(raw.pca$x)) +
 
 ***Question: Describe the PCA plot. How do PC1 and PC2 separate the samples?***
 
-*The PCA plot is color coding the samples according to subtype. PC1 Does not appear to separte the subtypes, something else? while PC2 is separating as basal (triple negative) vs the other four subtypes?*
+*The PCA plot color-codes the samples by subtype. PC1 does not appear to separate the subtypes, as they are all mixed, while PC2 appears to be separating samples as basal (triple negative) vs the other four subtypes.*
 
 ## Problem 4
 
@@ -182,7 +182,7 @@ ggplot(data.frame(variable.pca$x)) +
 
 ***Question: What do PC1 and PC2 represent now? Do you see better separation between any of the subtypes? Which ones?***
 
-*PC1 separates basal, her2, normal, Pattern of prognosis PC2 also prognosis?*
+*PC1 now appears to represent whether a subtype is HR+ or HR- with better separation for basal, her2, and normal subtypes. PC1 also appears to be capturing the pattern of prognosis. PC2 does not appear to separate the samples as they look mixed.*
 
 ## Problem 5
 
@@ -191,7 +191,7 @@ What are the molecular signatures driving this variance between the samples (and
 Here, I have provided the code for selecting the top 200 positive and negative genes from PC1.
 
 ```{r}
-pc1.comp <- var.pca$rotation[, "PC1"]
+pc1.comp <- variable.pca$rotation[, "PC1"]
 ## Note: Switch "var.pca" above to whatever you named the object resulting from prcomp.
 
 pc1.genes.up <- names(pc1.comp)[order(pc1.comp, decreasing = TRUE)][1:200]
@@ -221,14 +221,19 @@ all_tests <- tibble(set = names(db), p.value = all_pvals) %>% arrange(p.value) %
 
 ***Question: Which GO terms are significant at FDR < 0.05? What gene had the highest PC1 positive component? How do these pieces of information reflect the separation you see on the PCA plot along PC1? Interpret the biology in terms of breast cancer subtypes.***
 
-*Hormone levels?*
+```{r}
+all_tests[all_tests$fdr < 0.05,]
+```
+
+
+*GO terms significant at FDR < 0.05 include HORMONE and MAMMARY_GLAND. The gene with the highest positive PC1 component is ESR1 or Estrogen Receptor 1. HR+ vs HR- *
 
 ## Problem 6
 
 Repeat the same analysis for the genes with the most negative components along PC1. You should find enrichment in immune response and intermediate filament pathways. 
 ***Question: Which cancer subtype is present on the left side of the PCA plot? Use PubMed or Google to search and explain why this subtype would be associated with immune pathways and intermediate filaments.***
 
-*Triple negative inflammatory and immune pathways?*
+*On the left side you have the s Triple negative inflammatory and immune pathways?*
 
 ## Problem 7
 
