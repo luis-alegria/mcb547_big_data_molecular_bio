@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Naive Bayes"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -64,6 +66,8 @@ plotThreshVsPerf(thresh)
 
 ***Question: Is the optimal threshold for these data, according to mmce, equal to 0.5? Does the optimal threshold skew the results toward increase true positives or reducing false positives?***
 
+*The optimal threshold for the susceptibility data (according to mmce) is around 0.05, not 0.5. Based on the plots, it appears the optimal threshold skews results towards increasing true positives?*
+
 # Problem 2 - Whiteboard problem
 
 It’s easy to plot a ROC curve.
@@ -89,13 +93,15 @@ fullmodel <- train(bayes, task)
 We can inspect the model to identify how the amino acid at each position affected the probability of being susceptible or resistant. For example, in position 90, ~80% of susceptible strains had the wildtype allele, compared to only ~40% of the resistant strains.
 
 ```{r}
-fullmodel$learner.model$tables$P90
+fullmodel$learner.model$tables$P76
 ```
 
 Visit the Stanford HIV Drug Resistance Database, https://hivdb.stanford.edu/dr-summary/mut-scores/PI/. Check the FPV/r box to add the mutation scores for FPV resistance. For which positions with a score of 60 do we see a big effect in our model?
+
+*I47A, I50V, I54L, L76V, I84A. Difference between resistance and susceptible proportions?*
 
 # Problem 4
 
 ***If our classifier were being used to decide which drugs to prescribe to an HIV patient, do you think we should be more concerned about false positive predictions or false negative predictions?*** (Positive means sensitivity to FPV and negative means resistance. A false positive would result in the patient being given FPV, whereas a false negative would result in the patient being given drugs that target other HIV functions.)
 
-
+*False positive? They will be given a medication for which they are resistant to? So ineffective?*
