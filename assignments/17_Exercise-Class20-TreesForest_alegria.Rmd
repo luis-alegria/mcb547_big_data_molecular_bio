@@ -1,0 +1,250 @@
+---
+title: "Exercise - Tree Diversity and Random Forests"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+editor_options:
+  chunk_output_type: console
+---
+
+In this exercise, we'll link **manual decision-tree reasoning** to how a **random forest** works.
+
+A decision tree is a flow-chart–like model that makes predictions by asking a series of yes/no questions about the data, splitting it into smaller and smaller groups until each branch mostly contains one class.
+
+Each group (A–F) has a different subset of features and examples. We will:
+
+1. Make a manual decision tree using your group's dataset (mammal vs. not mammal)
+2. Train one decision tree using your group's dataset
+3. Train a decision tree and a random forest on the full dataset
+4. Compare and discuss
+
+**Package note:** The random forest uses the `ranger` package. If you do not already have it installed, run the following command once in the R console:
+
+```r
+install.packages("ranger")
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(mlr3)
+library(mlr3learners)
+library(data.table)
+library(rpart.plot)
+```
+
+Download your group's `.csv` file and `animal_traits_full.csv` from D2L → Content → Datasets → AnimalDecisions and place them in the same folder as this file.
+
+---
+
+## Part 1: Manual decision tree
+
+Using your group's dataset, draw a decision tree by hand that separates **mammals** from **non-mammals**.
+
+### Question 1
+
+**Describe your manual tree. Which feature did you split on first, and why?**
+
+*Answer:*
+
+
+---
+
+## Part 2: Train your group's decision tree
+
+Load your group's dataset. Replace `???` with your group's letter (A–F).
+
+```{r load-group}
+group_data <- read_csv("animal_traits_set_???.csv")
+```
+
+Convert the text columns to factors and remove the `Animal` column, since the animal's name should not be used to predict its class.
+
+```{r prepare-group}
+group_data_train <- group_data %>%
+  mutate(across(where(is.character), as.factor)) %>%
+  select(-Animal)
+```
+
+Now train a decision tree to classify all of the animal classes (Bird, Crustacean, Mollusk, Mammal, Amphibian, Fish, Reptile).
+
+```{r group-tree}
+task <- TaskClassif$new(
+  id = "tree",
+  backend = as.data.table(group_data_train),
+  target = "Class"
+)
+
+learner <- lrn("classif.rpart", predict_type = "response", minsplit = 1)
+learner$train(task)
+
+rpart.plot(learner$model, type = 0, extra = 102,
+           main = "Group Decision Tree")
+```
+
+### Question 2
+
+**Which feature did your model choose to split on first? Is it the same feature you chose for your manual tree?**
+
+*Answer:*
+
+
+---
+
+## Part 3: Load the full dataset
+
+```{r load-full}
+full <- read_csv("animal_traits_full.csv") %>%
+  mutate(across(where(is.character), as.factor))
+
+full %>% glimpse()
+```
+
+### Train/test split
+
+We'll randomly use 70% of the data for training and hold out 30% for testing.
+
+```{r split-data}
+set.seed(42)
+n <- nrow(full)
+train_ids <- sample(seq_len(n), size = 0.7 * n)
+train_animals <- full$Animal[train_ids]
+test_ids <- setdiff(seq_len(n), train_ids)
+test_animals <- full$Animal[test_ids]
+
+data_full <- full %>% select(-Animal)
+```
+
+---
+
+## Part 4: Decision tree vs. random forest
+
+### Decision tree on the full data
+
+```{r full-tree}
+task_full <- TaskClassif$new(
+  id = "animal_full",
+  backend = as.data.table(data_full),
+  target = "Class"
+)
+
+tree <- lrn("classif.rpart", predict_type = "response", minsplit = 1)
+
+# Train only on training rows
+tree$train(task_full, row_ids = train_ids)
+
+# Predict on held-out test rows
+pred_tree <- tree$predict(task_full, row_ids = test_ids)
+
+acc_tree <- pred_tree$score(msr("classif.acc"))
+cat("Decision tree accuracy on test data:", round(acc_tree, 3), "\n")
+
+rpart.plot(tree$model, type = 0, extra = 102,
+           main = "Decision Tree (Full Data)")
+```
+
+### Random forest on the full data
+
+```{r full-forest}
+set.seed(42)
+forest <- lrn("classif.ranger", predict_type = "response",
+              num.trees = 300, importance = "impurity")
+
+# Train only on training rows
+forest$train(task_full, row_ids = train_ids)
+
+# Predict on held-out test rows
+pred_forest <- forest$predict(task_full, row_ids = test_ids)
+
+acc_forest <- pred_forest$score(msr("classif.acc"))
+cat("Random forest accuracy on test data:", round(acc_forest, 3), "\n")
+```
+
+```{r compare}
+cat("Decision tree:", round(acc_tree, 3),
+    "| Random forest:", round(acc_forest, 3), "\n")
+```
+
+### Question 3
+
+**Which model performed better on the test data? Why might averaging the votes of many trees improve accuracy compared with a single tree?**
+
+*Answer:*
+
+
+---
+
+## Part 5: Feature importance
+
+```{r importance}
+importance <- forest$model$variable.importance %>% sort(decreasing = TRUE)
+importance_df <- tibble(Feature = names(importance),
+                        Importance = as.numeric(importance))
+
+importance_df %>%
+  slice_head(n = 8) %>%
+  ggplot(aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_col(fill = "#228B22") +
+  coord_flip() +
+  labs(title = "Feature Importance (Random Forest)",
+       x = NULL, y = "Importance Score") +
+  theme_minimal()
+```
+
+### Question 4
+
+**Which features are most influential in the random forest? Do they match your intuition from your manual tree?**
+
+*Answer:*
+
+
+---
+
+## Part 6: Final questions
+
+### Question 5
+
+**Did your group's decision tree accurately classify the new animals we discussed in class? Why or why not?**
+
+*Answer:*
+
+
+### Question 6
+
+**Why might a random forest be more accurate than a single tree trained on all available animals and features?**
+
+*Answer:*
+
+
+### Question 7
+
+**Imagine that instead of animals, we have a dataset of tumor samples. Each sample has gene expression measurements and mutation profiles, along with information on whether each patient responded to a drug. Describe two features that a decision tree could use, and what a split based on each of those features might look like.**
+
+*Answer:*
+
+
+### Question 8
+
+**Suppose a random forest accurately predicts drug resistance and frequently uses the expression of a particular gene. Does this mean that this gene causes drug resistance?**
+
+*Answer:*
+
+
+### Question 9
+
+**A hospital is considering two models to decide whether a patient receives a particular treatment:**
+
+- **Model A is a single decision tree with 80% accuracy. Its decisions can be traced through a series of understandable rules.**
+- **Model B is a random forest with 90% accuracy. Its predictions are more accurate overall, but its reasoning is harder to interpret.**
+
+**Which model would you recommend? How can a decision to use a model be supported when the model is not interpretable?**
+
+*Answer:*
+
+
+## Final reflection
+
+**What did you observe or learn today about thinking with decision trees. Can you think of a case where a decision tree is used in business/society, or where one might be useful for you?**
+
+*Answer:*
+
