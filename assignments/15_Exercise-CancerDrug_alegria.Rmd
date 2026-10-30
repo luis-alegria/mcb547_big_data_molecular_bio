@@ -3,6 +3,8 @@ title: "Exercise - Cancer Drug Sensitivity"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
@@ -51,7 +53,7 @@ df <- readRDS("GDSC1_Expr.Rds")
 
 **What does each row in this dataset represent? What do the `EXPR_` columns represent?**
 
-*Answer: Each row in this dataset represents a cell line with the `EXPR_` features representing the gene expression values.*
+*Answer: Each row in this dataset represents a cell line, and the `EXPR_` features represent gene expression values.*
 
 
 ### Doxorubicin
@@ -78,7 +80,7 @@ df %>%
 
 **Broadly, what is the shape of this distribution? Are many cell lines sensitive to Doxorubicin (i.e., do many cell lines have low log(IC50) values)?**
 
-*Answer: The distribution of cell line sensitivity to Doxorubicin is skewed to the right. From the plot, it appears that the majority of cell lines  have negative log(IC50) values and so are sensitive to Doxorubicin.*
+*Answer: The distribution of cell line sensitivity to Doxorubicin is right-skewed. From the plot, most cell lines have negative log(IC50) values and are sensitive to Doxorubicin.*
 
 
 ### Imatinib
@@ -103,7 +105,7 @@ df %>%
 
 **How does the distribution of Imatinib sensitivities differ from the Doxorubicin distribution? Why might a targeted therapy produce a different distribution of drug sensitivities across cancer cell lines?**
 
-*Answer: The distribution for Imatinib sensitivity is skewed to the left (cell lines resistant to the medication), opposite to the distribution for Doxorubicin. According to the class lecture, Imatinib targets a specific oncogenic protein, so only cell lines producing the protein are targeted and more would be resistant and produce the distribution.*
+*Answer: The distribution of Imatinib sensitivity is skewed to the left (more cell lines are resistant to the medication), opposite to the distribution for Doxorubicin. According to the class lecture, Imatinib targets a specific oncogenic protein, so only cell lines that produce the protein are targeted so more are resistant, which explains the distribution.*
 
 ---
 
@@ -164,7 +166,7 @@ plot(doxModel)
 
 **What does this plot show? Why might the cross-validation error increase when $\lambda$ is very small (left side of the plot) or very large (right side)? What is the tradeoff between these two extremes?**
 
-*Answer:The plot shows mean-squared error with error bars for cross validation scores for varying -Log($\lambda$) values and the number of features or gene retained in the model. Additionally, it shows two lines: one for lambda.min and lambda.1se. When $\lambda$ is large, many features in the model may end up with a coefficient of zero, so it underfits. When $\lambda$ is small, more features are retained and the model may overfit. The trade off between the two extremes is model complexity. Large $\lambda$ results is less complex models while small $\lambda$ results in more complex model.*
+*Answer: The plot shows mean-squared error with error bars for cross-validation scores across varying -Log($\lambda$) values and the number of features (genes) retained in the model. It also shows two lines: one for lambda. min and one for lambda.1se. When $\lambda$ is large, many features may end up with a coefficient of zero, so the model underfits. When $\lambda$ is small, the model retains more features and may overfit. The trade-off between the two extremes is model complexity. Large $\lambda$ yields less complex models, while small $\lambda$ yields more complex models.*
 
 
 Now extract the non-zero coefficients using `lambda.min`, the value of $\lambda$ that minimizes cross-validation error.
@@ -201,14 +203,13 @@ doxCoef %>%
   head(3)
 
 #most negative
-
 doxCoef %>% 
   arrange(coefficient) %>% 
   head(3)
 ```
 
 
-*Answer:156 genes have non-zero coefficients for the Doxorubicin. The top 3 genes with positive coefficients: EXPR_MATN1, EXPR_BRI3, and  EXPR_ATP1A4. The 3 genes with most negative coefficients are: EXPR_C1orf185, EXPR_OPALIN, and EXPR_PPP1R3F. Positive coefficient values indicate resistance while negative values indicate sensitivity to the medication.*
+*Answer:156 genes have non-zero coefficients for Doxorubicin. The top 3 genes with positive coefficients are EXPR_MATN1, EXPR_BRI3, and EXPR_ATP1A4. The 3 genes with the most negative coefficients are: EXPR_C1orf185, EXPR_OPALIN, and EXPR_PPP1R3F. Positive coefficients indicate resistance, while negative coefficients indicate sensitivity to the medication.*
 
 
 Now plot the LASSO model's predicted log(IC50) values against the observed values for the same cell lines used to fit the model (best practice would be to predict on cell lines not used to fit the model, but this is an example exercise).
@@ -297,14 +298,14 @@ data.frame(
 
 These plots show predictions for the training data. Would you expect the models to perform equally well on new cell lines that were not used for training?**
 
-*Answer: For both plots, the predicted values do not seem to be matching the observed values as most observed values for both medications are away from the diagonal line. Perfect predictions would mean that all observed points fall on the diagonal line of predictions. Based on the plots, these models would not perform well in predicting drug sensitivity on new cell lines. *
+*Answer: For both plots, the predicted values do not seem to match the observed values, as most observed values for both medications fall far from the diagonal line. Perfect predictions would mean that all observed points fall on the diagonal line of predictions. Based on the plots, these models would not perform well in predicting drug sensitivity on new cell lines.*
 
 
 ### Question 7
 
 **How does the number of genes with non-zero coefficients for Imatinib compare with Doxorubicin? Does having fewer selected genes necessarily mean that a drug has a more specific mechanism of action? Explain.**
 
-*Answer: For Imatinib, 90 genes are non-zero, so less than the 156 of Doxorubicin. The model having fewer selected genes does not neccesarily mean that a drug has *
+*Answer: For Imatinib, 51 gene coefficients are non-zero, fewer than the 156 for Doxorubicin. Fewer selected genes do not necessarily mean a drug has a more specific mechanism of action. The model is selecting an optimal $\lambda$ with minimal MSE. The number of features or genes selected depends on the optimal $\lambda$ and does not indicate a drug's mechanism of action.*
 
 
 ### Question 8
@@ -316,7 +317,7 @@ imatinibCoef[imatinibCoef$gene == "EXPR_ABL1",]
 ```
 
 
-*Answer: Yes, among the genes selected by LASSO Imatinib, we have ABL1, with a negative value of -0.02728149 so higher expression is associated with drug sensitivity.*
+*Answer:  Yes, among the genes selected by LASSO Imatinib, we have ABL1, with a negative value, so higher expression is associated with drug sensitivity.*
 
 
 ---
@@ -325,7 +326,7 @@ imatinibCoef[imatinibCoef$gene == "EXPR_ABL1",]
 
 Choose two other drugs available in this dataset. For each drug, look up its mechanism of action and determine from the literature whether it is a targeted therapy or a general chemotherapy. Record your source.
 
-```{r list-drugs}
+```{r list-drugs, results='hide'}
 # List available drugs
 colnames(df) %>%
   keep(~ str_starts(., "LN_IC50_")) %>%
@@ -399,12 +400,32 @@ coef_drug2
 ```
 
 ```{r}
-min(doxModel$cvm)
-min(imatinibModel$cvm)
-min(model_drug1$cvm)
-min(model_drug2$cvm)
+#non-zero coefficient
+length(coef_drug2$coefficient)
+
+#largest positive
+coef_drug2 %>% 
+  arrange(desc(coefficient)) %>% 
+  head(1)
+
+#most negative
+coef_drug2 %>% 
+  arrange(coefficient) %>% 
+  head(1)
 ```
 
+#non-zero coefficient
+length(coef_drug1$coefficient)
+
+#largest positive
+coef_drug1 %>% 
+  arrange(desc(coefficient)) %>% 
+  head(1)
+
+#most negative
+coef_drug1 %>% 
+  arrange(coefficient) %>% 
+  head(1)
 
 ### Question 9
 
@@ -415,9 +436,26 @@ min(model_drug2$cvm)
 3. Identify one or two genes with large coefficients. Are their known biological functions related to the drug's mechanism?
 4. Compare your results with Doxorubicin and Imatinib. What can you conclude about the relationship between gene expression and drug sensitivity? What can you *not* conclude from these models alone?
 
-_**Cisplatin** 1. This medication is general chemotherapy and crosslinks DNA (1). 2. In the model for this medication 122 genes have non-zero coefficients. 3. The gene CPSF4L with coefficient of about 0.15 has biological function of RNA binding(2), so its function is not directly related to the drug's mechanism. 4. The number of genes (116) in the model is between the results for Doxorubicin and Imatinib. The mean-squared error at $\lambda$ min is about 0.15 higher than     **Seliciclib** 1. This medication is targeted therapy and inhibits Cyclin-Dependent Kinases (CDKs) (3). 2. In the model for this medication 116 genes have non-zero coefficients. 3. The gene FNDC7 with coefficient with value of about 0.16 has function of protein binding (4), which may be related to the the drug's mechanism. (4)_
+**Cisplatin**
 
-**Sources: (1) Ali, R., Aouida, M., Alhaj Sulaiman, A., Madhusudan, S., & Ramotar, D. (2022). Can Cisplatin Therapy Be Improved? Pathways That Can Be Targeted. International Journal of Molecular Sciences, 23(13), 7241. https://doi.org/10.3390/ijms23137241 (2) https://www.uniprot.org/uniprotkb/A6NMK7/entry (3) Hilal S. Khalil, Vanio Mitev, Tatyana Vlaykova, Laura Cavicchi, Nikolai Zhelev,Discovery and development of Seliciclib. How systems biology approaches can lead to better drug performance,Journal of Biotechnology,Volume 202,2015,Pages 40-49,ISSN 0168-1656,https://doi.org/10.1016/j.jbiotec.2015.02.032. (4) https://www.genecards.org/card/FNDC7#Function**
+1. *This medication is a general chemotherapy drug and crosslinks DNA (1).*
+2. *In the model for this medication, 116 genes have non-zero coefficients.*
+3. *The gene CPSF4L, with a coefficient of about 0.15, has a biological function of RNA binding (2), so its function is not directly related to the drug's mechanism.*
+4. *The number of genes in the model is between the results for Doxorubicin and Imatinib, with the expression of CCSER1 associated with resistance and ZIC3 associated with sensitivity. The mechanism of action cannot be concluded from the model alone.*
+
+**Seliciclib**
+
+1. *This medication is a targeted therapy and inhibits Cyclin-Dependent Kinases (CDKs) (3).*
+2. *In the model for this medication, 52 genes have non-zero coefficients.*
+3. *The gene FNDC7, with a coefficient value of about 0.16, has a protein-binding function (4), which may be related to the drug's mechanism.*
+4. *This model has a gene number closer to the model for Imatinib. FNDC7 expression is most associated with resistance, and PGAM1P4 with sensitivity for Seliciclib.*
+
+**Sources**
+
+1. **Ali, R., Aouida, M., Alhaj Sulaiman, A., Madhusudan, S., & Ramotar, D. (2022). Can Cisplatin Therapy Be Improved? Pathways That Can Be Targeted. *International Journal of Molecular Sciences*, 23(13), 7241. https://doi.org/10.3390/ijms23137241**
+2. **UniProt entry A6NMK7. https://www.uniprot.org/uniprotkb/A6NMK7/entry**
+3. **Khalil, H. S., Mitev, V., Vlaykova, T., Cavicchi, L., & Zhelev, N. (2015). Discovery and development of Seliciclib. How systems biology approaches can lead to better drug performance. *Journal of Biotechnology*, 202, 40–49. https://doi.org/10.1016/j.jbiotec.2015.02.032**
+4. **GeneCards entry for FNDC7. https://www.genecards.org/card/FNDC7\\#Function**
 ---
 
 ## Review
