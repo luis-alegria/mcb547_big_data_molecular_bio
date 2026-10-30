@@ -1,5 +1,7 @@
 ---
 title: "Exercise - Tree Diversity and Random Forests"
+author: "Luis Alegría"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
@@ -45,7 +47,9 @@ Using your group's dataset, draw a decision tree by hand that separates **mammal
 
 **Describe your manual tree. Which feature did you split on first, and why?**
 
-*Answer:*
+Put in picture. 
+
+*Answer: We started with cold-blooded as this removes reptiles, fish, and amphibians as being mammals. Then split of >4 legs, legs=4, kg=1, kg=180.*
 
 
 ---
@@ -55,7 +59,7 @@ Using your group's dataset, draw a decision tree by hand that separates **mammal
 Load your group's dataset. Replace `???` with your group's letter (A–F).
 
 ```{r load-group}
-group_data <- read_csv("animal_traits_set_???.csv")
+group_data <- read_csv("animal_traits_set_B.csv")
 ```
 
 Convert the text columns to factors and remove the `Animal` column, since the animal's name should not be used to predict its class.
@@ -86,7 +90,7 @@ rpart.plot(learner$model, type = 0, extra = 102,
 
 **Which feature did your model choose to split on first? Is it the same feature you chose for your manual tree?**
 
-*Answer:*
+*Answer: The model first split on the Cold_Blooded feature. Yes, it is the same as the one chosen for our manual tree.*
 
 
 ---
@@ -169,7 +173,7 @@ cat("Decision tree:", round(acc_tree, 3),
 
 **Which model performed better on the test data? Why might averaging the votes of many trees improve accuracy compared with a single tree?**
 
-*Answer:*
+*Answer: The accuracy for both models on the test data is the same with value of 0.143. Second part? In general? Why is the forest better than the tree?*
 
 
 ---
@@ -195,7 +199,7 @@ importance_df %>%
 
 **Which features are most influential in the random forest? Do they match your intuition from your manual tree?**
 
-*Answer:*
+*Answer: Height_cm, Weight_kg is more influential that Cold_blooded. Different than intuition on manual tree.*
 
 
 ---
@@ -206,21 +210,21 @@ importance_df %>%
 
 **Did your group's decision tree accurately classify the new animals we discussed in class? Why or why not?**
 
-*Answer:*
+*Answer:It did. The leaves for the decision tree are seaprated into mammal vs non-mammal. Platypus? yes Pangolin yes Naked mole rat? yes eel? yes*
 
 
 ### Question 6
 
 **Why might a random forest be more accurate than a single tree trained on all available animals and features?**
 
-*Answer:*
+*Answer: Less prone to overfitting?*
 
 
 ### Question 7
 
 **Imagine that instead of animals, we have a dataset of tumor samples. Each sample has gene expression measurements and mutation profiles, along with information on whether each patient responded to a drug. Describe two features that a decision tree could use, and what a split based on each of those features might look like.**
 
-*Answer:*
+*Answer: Whether the expression of certain genes are increased or decreased (<= to a number)? Is there a mutation at a certain position (yes or no)?*
 
 
 ### Question 8
