@@ -2,8 +2,10 @@
 title: "Exercise - Naive Bayes"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -66,20 +68,22 @@ plotThreshVsPerf(thresh)
 
 ***Question: Is the optimal threshold for these data, according to mmce, equal to 0.5? Does the optimal threshold skew the results toward increase true positives or reducing false positives?***
 
-*The optimal threshold for the susceptibility data (according to mmce) is around 0.05, not 0.5. Based on the plots, it appears the optimal threshold skews results towards increasing true positives?*
+*The optimal threshold for the susceptibility data (according to mmce) is around 0.05, not 0.5. Based on the plots, the optimal threshold skews results toward more true positives, with a TP rate of about 92% at the optimal threshold versus about 23% for FPR.*
 
 # Problem 2 - Whiteboard problem
 
 It’s easy to plot a ROC curve.
 
-```{r}
+```{r out.width = "50%"}
 plotROCCurves(thresh)
 ```
 
 Draw the ROC curve plot on the whiteboard. On it, label the approximate point corresponding to a threshold of 0.5 and the point corresponding to the optimal mmce threshold.
 
-```{r, eval=F, echo = FALSE, out.width = "600px"}
-knitr::include_graphics("YourDrawing.jpg")
+**I forgot to take a picture of my group's whiteboard. I drew it on my tablet.**
+
+```{r echo = FALSE, out.width = "75%"}
+knitr::include_graphics("naive_bayes_wb.jpg")
 ```
 
 # Problem 3
@@ -93,15 +97,21 @@ fullmodel <- train(bayes, task)
 We can inspect the model to identify how the amino acid at each position affected the probability of being susceptible or resistant. For example, in position 90, ~80% of susceptible strains had the wildtype allele, compared to only ~40% of the resistant strains.
 
 ```{r}
+fullmodel$learner.model$tables$P47
+fullmodel$learner.model$tables$P50
+fullmodel$learner.model$tables$P54
 fullmodel$learner.model$tables$P76
+fullmodel$learner.model$tables$P84
 ```
 
 Visit the Stanford HIV Drug Resistance Database, https://hivdb.stanford.edu/dr-summary/mut-scores/PI/. Check the FPV/r box to add the mutation scores for FPV resistance. For which positions with a score of 60 do we see a big effect in our model?
 
-*I47A, I50V, I54L, L76V, I84A. Difference between resistance and susceptible proportions?*
+_**Difference between resistance and susceptible proportions?**_
+
+*From the database, we have positions I47A, I50V, I54L, I54M, L76V, I84A, I84C, and I84V (47, 50, 54, 76, and 84). From the output above, and by taking the difference between resistant and susceptible proportions, we find that positions 54 (0.25 - 0.85 = -0.6) and 84 (0.52 - 0.92 = -0.4) had large differences and a big effect on the model.*
 
 # Problem 4
 
 ***If our classifier were being used to decide which drugs to prescribe to an HIV patient, do you think we should be more concerned about false positive predictions or false negative predictions?*** (Positive means sensitivity to FPV and negative means resistance. A false positive would result in the patient being given FPV, whereas a false negative would result in the patient being given drugs that target other HIV functions.)
 
-*False positive? They will be given a medication for which they are resistant to? So ineffective?*
+*We should be more concerned about a false positive. In this case, a patient's HIV strain is classified as susceptible to the medication when it may be resistant. They would be receiving an ineffective medication.*
