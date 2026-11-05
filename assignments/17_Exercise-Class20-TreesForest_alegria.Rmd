@@ -3,6 +3,8 @@ title: "Exercise - Tree Diversity and Random Forests"
 author: "Luis Alegría"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
@@ -24,7 +26,7 @@ Each group (A–F) has a different subset of features and examples. We will:
 **Package note:** The random forest uses the `ranger` package. If you do not already have it installed, run the following command once in the R console:
 
 ```r
-install.packages("ranger")
+ install.packages("ranger")
 ```
 
 ```{r setup, message=FALSE, warning=FALSE}
@@ -49,7 +51,7 @@ Using your group's dataset, draw a decision tree by hand that separates **mammal
 
 Put in picture. 
 
-*Answer: Our splits were cold blooded?, legs > 4?, legs = 4?, weight kg = 1?, and weight kg =180?. These split resulted in separating mammals from non-mammals. We first started with the cold blooded feature as this split classifies 7/17 of the animals in the set as non-mammals.*
+*Answer: Our splits were cold blooded?, legs > 4?, legs = 4?, weight kg = 1?, and weight kg =180?. These splits separated mammals from non-mammals. We started with the cold-blooded feature because this split classifies 7/17 of the animals in the set as non-mammals.*
 
 
 ---
@@ -173,7 +175,7 @@ cat("Decision tree:", round(acc_tree, 3),
 
 **Which model performed better on the test data? Why might averaging the votes of many trees improve accuracy compared with a single tree?**
 
-*Answer: The accuracy for both models on the test data is the same with value of 0.143. A single tree easily overfits training data. In a random forest, the individual trees are trained on different subsets of the data with each tree  *
+*Answer: Both models have the same accuracy on the test data: 0.143. For this random test/train split, the decision tree and random forest perform equally well. According to the class lecture, a single tree easily overfits the training data, while in a random forest, the trees may overfit different feature subsets, and averaging the predictions increases accuracy.*
 
 
 ---
@@ -199,7 +201,7 @@ importance_df %>%
 
 **Which features are most influential in the random forest? Do they match your intuition from your manual tree?**
 
-*Answer: In the random forest the top three influential features are height, weight, and cold blooded. The features cold blooded and weight match the intuition of our manual tree but differs on the height feature. In our manual tree we did not consider this feature in our splits.*
+*Answer: In the random forest, the top three influential features are height, weight, and cold blooded. The features cold blooded and weight match our intuition from the manual tree but differ on the height feature. In our manual tree, we did not consider this feature in our splits.*
 
 
 ---
@@ -210,28 +212,28 @@ importance_df %>%
 
 **Did your group's decision tree accurately classify the new animals we discussed in class? Why or why not?**
 
-*Answer: Yes, our tree accurately classifed the new animals discussed in class (Platypus, pangolin, naked mole rat, an eel). Our initial split of cold blooded *
+*Answer: Yes, our tree accurately classified the new animals discussed in class (Platypus, pangolin, naked mole rat, an eel). Our initial split of cold blooded accurately classifies the naked mole rat and eel as non-mammals. The third split in our manual tree (legs=4) classifies the platypus and pangolin as mammals.*
 
 
 ### Question 6
 
 **Why might a random forest be more accurate than a single tree trained on all available animals and features?**
 
-*Answer: Less prone to overfitting?*
+*Answer: A single tree can overfit the training data and have high variance. In a random forest, a tree is trained on a subset of features. This may cause trees to overfit in various ways, but averaging the trees' outputs cancels out noise, resulting in more accurate predictions.*
 
 
 ### Question 7
 
 **Imagine that instead of animals, we have a dataset of tumor samples. Each sample has gene expression measurements and mutation profiles, along with information on whether each patient responded to a drug. Describe two features that a decision tree could use, and what a split based on each of those features might look like.**
 
-*Answer: Whether the expression of certain genes are increased or decreased (<= to a number)? Is there a mutation at a certain position (yes or no)?*
+*Answer: Two features for this scenario are a gene's expression level and whether a mutation is detected in the tumor sample. A split for the first feature could be log(gene expression level) > 3, and for the second feature, is a mutation in the gene present?*
 
 
 ### Question 8
 
 **Suppose a random forest accurately predicts drug resistance and frequently uses the expression of a particular gene. Does this mean that this gene causes drug resistance?**
 
-*Answer:*
+*Answer: No, it does not mean the gene causes drug resistance. If a random forest model frequently uses the expression value of a particular gene, it means the gene is important in predicting resistance, but it does not mean the gene causes drug resistance.*
 
 
 
@@ -244,11 +246,13 @@ importance_df %>%
 
 **Which model would you recommend? How can a decision to use a model be supported when the model is not interpretable?**
 
-*Answer:*
+*Answer: I recommend Model A because it is more interpretable. A health care professional can review the model's prediction and determine whether it is appropriate given the patient's information. If the health care professional disagrees with the prediction, they can override it. The decision to use the less interpretable model can be supported when not receiving the treatment causes harm to patients. In such a situation, accuracy is more important.*
 
 
 ## Final reflection
 
 **What did you observe or learn today about thinking with decision trees. Can you think of a case where a decision tree is used in business/society, or where one might be useful for you?**
 
-*Answer:*
+*Answer: Building the manual tree with my group put the strength of decision trees' interpretability into perspective. We could easily trace the path of splits taken to classify an animal as a mammal or non-mammal. In some cases, interpretability may be more valuable than accuracy.*
+
+*I often work with metagenomics data. One challenge with this data is uncertainty when a sample contains few taxa or when a taxon is present at low relative abundance. In both cases, it can be difficult to determine whether the results reflect the sample or reflect contamination. A decision tree would be useful to filter out samples with too few taxa (e.g., is total taxa < 10 => remove sample) or taxa with low relative abundance (e.g., is taxon relative abundance < 0.01 => remove taxon).*
