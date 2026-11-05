@@ -49,7 +49,7 @@ Using your group's dataset, draw a decision tree by hand that separates **mammal
 
 Put in picture. 
 
-*Answer: We started with cold-blooded as this removes reptiles, fish, and amphibians as being mammals. Then split of >4 legs, legs=4, kg=1, kg=180.*
+*Answer: Our splits were cold blooded?, legs > 4?, legs = 4?, weight kg = 1?, and weight kg =180?. These split resulted in separating mammals from non-mammals. We first started with the cold blooded feature as this split classifies 7/17 of the animals in the set as non-mammals.*
 
 
 ---
@@ -173,7 +173,7 @@ cat("Decision tree:", round(acc_tree, 3),
 
 **Which model performed better on the test data? Why might averaging the votes of many trees improve accuracy compared with a single tree?**
 
-*Answer: The accuracy for both models on the test data is the same with value of 0.143. Second part? In general? Why is the forest better than the tree?*
+*Answer: The accuracy for both models on the test data is the same with value of 0.143. A single tree easily overfits training data. In a random forest, the individual trees are trained on different subsets of the data with each tree  *
 
 
 ---
@@ -199,7 +199,7 @@ importance_df %>%
 
 **Which features are most influential in the random forest? Do they match your intuition from your manual tree?**
 
-*Answer: Height_cm, Weight_kg is more influential that Cold_blooded. Different than intuition on manual tree.*
+*Answer: In the random forest the top three influential features are height, weight, and cold blooded. The features cold blooded and weight match the intuition of our manual tree but differs on the height feature. In our manual tree we did not consider this feature in our splits.*
 
 
 ---
@@ -210,7 +210,7 @@ importance_df %>%
 
 **Did your group's decision tree accurately classify the new animals we discussed in class? Why or why not?**
 
-*Answer:It did. The leaves for the decision tree are seaprated into mammal vs non-mammal. Platypus? yes Pangolin yes Naked mole rat? yes eel? yes*
+*Answer: Yes, our tree accurately classifed the new animals discussed in class (Platypus, pangolin, naked mole rat, an eel). Our initial split of cold blooded *
 
 
 ### Question 6
@@ -234,6 +234,7 @@ importance_df %>%
 *Answer:*
 
 
+
 ### Question 9
 
 **A hospital is considering two models to decide whether a patient receives a particular treatment:**
@@ -251,4 +252,3 @@ importance_df %>%
 **What did you observe or learn today about thinking with decision trees. Can you think of a case where a decision tree is used in business/society, or where one might be useful for you?**
 
 *Answer:*
-
