@@ -1,0 +1,34 @@
+---
+title: "18_neural_networks_tensorflow"
+author: "Luis Alegría"
+output: pdf_document
+date: "2026-11-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r echo = FALSE, out.width = "75%"}
+knitr::include_graphics("circle_tf2.png")
+```
+
+For the circle dataset, the network did not require any layers. To separate the two classes, it was enough to feed in the transformations ($x_{1}^{2}$) and ($x_{2}^{2}$). I chose these transformations as they reminded me of the equation of a circle ($x^2 + y^2 = r^2$).
+
+```{r echo = FALSE, out.width = "75%"}
+knitr::include_graphics("xor_tf2.png")
+```
+
+For the Exclusive OR data, as in the circle dataset, no hidden layers were required, and the input transformation was ($x_{1}x_{2}$). This separated the classes. I chose this feature to feed in because the thumbnail visualization roughly matched the visualization of the data points in the output.
+
+```{r echo = FALSE, out.width = "75%"}
+knitr::include_graphics("gaussian_tf2.png")
+```
+
+For the Gaussian dataset, I followed the strategy from the previous two problems: I did not add any hidden layers and tried to separate the classes based on feature transformations. The two transformation fed in were ($x_{1})$) and ($x_{2}$). I chose this combination by trial and error.
+
+```{r echo = FALSE, out.width = "75%"}
+knitr::include_graphics("spiral_tf.png")
+```
+
+The spiral dataset required the largest network because the data classes form two spirals meeting at $(0, 0)$, so a more complex boundary is required for separation. As features I chose ($x_{1})$), ($x_{2}$), $\sin(x_1)$, and $\sin(x_2)$. In the network, there are two hidden layers: the first with 8 neurons and the second with 2. This configuration was the smallest network I could find that separated the classes.
